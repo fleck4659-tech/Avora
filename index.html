@@ -11,8 +11,22 @@
 <body>
 
 <div class="topbar">
+    <a href="https://www.youtube.com/@603blox" target="_blank">
     <img src="logo.jpg" alt="603blox Logo" class="logo">
+</a>
+
     <h2>603blox</h2>
+
+    <div class="topbar-right">
+        <div class="currency-display">
+            💰 603bucks: <span id="bucks">0</span>
+        </div>
+
+        <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+            Home
+        </button>
+    </div>
+</div>
 
     <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
         Home
@@ -28,7 +42,6 @@
 
 <h2>Latest News</h2>
 
-<p><strong>Date:</strong> June 26, 2026</p>
 
 <p>
 Welcome to the official 603blox website! This website is currently under construction. More features will be added soon!
@@ -39,19 +52,63 @@ Welcome to the official 603blox website! This website is currently under constru
 <p>More website features are currently being developed.</p>
 
 </div>
+
 <h2>About Me</h2>
 
 <p>Hello! I'm 603blox, I'm a Roblox content creator. I make Roblox videos and enjoy creating fun content for everyone to watch. Thanks for visiting my website!</p>
 
 <div class="menu">
-    <button onclick="window.open('https://www.youtube.com/@603blox', '_blank')">
-        YouTube Channel
-    </button>
+    <div class="dropdown">
+    <button class="dropbtn" onclick="toggleDropdown()">
+    Other Socials ▼
+</button>
+
+    <div class="dropdown-content" id="socialDropdown">
+        <a href="https://www.youtube.com/@603blox" target="_blank">YouTube</a>
+
+        <a href="YOUR_TWITTER_LINK" target="_blank">Twitter (X)</a>
+
+        <a href="YOUR_SUNO_LINK" target="_blank">Suno</a>
+
+        <a href="YOUR_TIKTOK_LINK" target="_blank">TikTok</a>
+    </div>
+</div>
 
     <button onclick="window.open('https://www.roblox.com/users/9744531169/profile', '_blank')">
         Roblox Profile
     </button>
 </div>
+<footer>
+    <p><strong>Creation date:</strong> June 26, 2026</p>
+</footer>
+<script>
+let lockedOpen = false;
 
+function toggleDropdown() {
+    const menu = document.getElementById("socialDropdown");
+
+    lockedOpen = !lockedOpen;
+
+    if (lockedOpen) {
+        menu.style.display = "block";
+    } else {
+        menu.style.display = "none";
+    }
+}
+
+const dropdown = document.querySelector(".dropdown");
+
+dropdown.addEventListener("mouseenter", function () {
+    if (!lockedOpen) {
+        document.getElementById("socialDropdown").style.display = "block";
+    }
+});
+
+dropdown.addEventListener("mouseleave", function () {
+    if (!lockedOpen) {
+        document.getElementById("socialDropdown").style.display = "none";
+    }
+});
+</script>
 </body>
 </html>

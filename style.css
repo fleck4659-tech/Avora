@@ -39,10 +39,13 @@ button:hover {
     background: linear-gradient(90deg, #0099ff, #0055ff);
     transform: scale(1.1);
     box-shadow: 0 0 20px #00bfff;
+}
+
 .topbar {
     background: #0f172a;
     padding: 12px 20px;
     border-bottom: 2px solid #00bfff;
+}
 
     position: sticky;
     top: 0;
@@ -77,11 +80,11 @@ button:hover {
     border-radius: 8px;
 }
 .logo {
-    width: 100px;
-    height: 100px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
 }
-@media (max-width: 768px) {
+@media (max-width: 1000px) {
 
     body {
         padding: 15px;
@@ -106,4 +109,69 @@ button:hover {
         width: 60px;
         height: 60px;
     }
+}
+footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+
+    text-align: center;
+    font-size: 12px;
+    color: #888;
+
+    background: #0d1117;
+    padding: 8px 0;
+}
+footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+
+    text-align: center;
+    font-size: 12px;
+    color: #888;
+
+    background: #0d1117;
+    padding: 8px 0;
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropbtn {
+    background: linear-gradient(90deg, #00bfff, #0077ff);
+    color: white;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background: #111827;
+    min-width: 180px;
+    border-radius: 10px;
+    border: 1px solid #00bfff;
+    overflow: hidden;
+    z-index: 999;
+}
+
+.dropdown-content a {
+    display: block;
+    color: white;
+    text-decoration: none;
+    padding: 12px;
+}
+
+.dropdown-content a:hover {
+    background: #1f2937;
+}
+
+.dropdown:hover .dropdown-content {
+}
+
+.logo {
+    cursor: pointer;
 }
