@@ -197,3 +197,28 @@ footer {
     font-size: 16px;
     border-bottom: 1px solid #ccc;
 }
+/* Container for the falling text */
+#falling-text-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none; /* Lets you click through the text */
+    overflow: hidden;
+    z-index: 9999; /* Keeps it on top of your background */
+}
+
+/* Individual falling words */
+.falling-word {
+    position: absolute;
+    color: white; /* Your requested text color */
+    font-family: sans-serif;
+    font-weight: bold;
+    font-size: 24px;
+    white-space: nowrap;
+    user-select: none;
+    opacity: 0.8;
+    transform: rotate(0deg);
+    transition: transform 0.1s linear;
+}
