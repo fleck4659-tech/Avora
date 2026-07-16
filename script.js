@@ -141,3 +141,63 @@ window.onload = function () {
         }
     }
 };
+// A list of "restricted" colors that cannot be used as a full naked body suit
+const RESTRICTED_COLORS = {
+    white: ["#ffffff", "#f0f0f0", "#e6e6e6"],
+    red: ["#ff0000", "#e60000", "#cc0000"],
+    blue: ["#0000ff", "#0000e6", "#0000cc"]
+};
+
+/**
+ * Checks if the chosen character colors are safe.
+ * If the head, torso, and legs are all the same restricted color,
+ * it automatically forces the torso to a safe, dark charcoal gray.
+ */
+function moderateCharacterColors(headColor, torsoColor, legsColor) {
+    const head = headColor.toLowerCase();
+    const torso = torsoColor.toLowerCase();
+    const legs = legsColor.toLowerCase();
+
+    let safeTorso = torso;
+    let moderated = false;
+
+    // Check if head, torso, and legs are all matching a restricted color
+    for (const colorGroup in RESTRICTED_COLORS) {
+        const restrictedList = RESTRICTED_COLORS[colorGroup];
+        
+        if (restrictedList.includes(head) && 
+            restrictedList.includes(torso) && 
+            restrictedList.includes(legs)) {
+            
+            // Force the torso to a dark, safe neutral color (like charcoal gray)
+            safeTorso = "#1e293b"; 
+            moderated = true;
+            break;
+        }
+    }
+
+    return {
+        head: head,
+        torso: safeTorso,
+        legs: legs,
+        wasModerated: moderated
+    };
+}
+
+// --- Example Test Run ---
+// If a user tries to make a fully white character:
+const result = moderateCharacterColors("#ffffff", "#ffffff", "#ffffff");
+console.log(result); 
+// Output: { head: "#ffffff", torso: "#1e293b", legs: "#ffffff", wasModerated: true }
+function handleCreateClick() {
+    const loggedIn = localStorage.getItem("loggedIn");
+
+    if (loggedIn === "true") {
+        // If logged in, open the separate creator website in a new tab
+        window.open("https://your-creator-website-link.com", "_blank");
+    } else {
+        // If not logged in, prompt them to join first!
+        alert("🔒 You need an account to save your games! Please sign up first.");
+        openCreateAccount(); // Opens your signup modal automatically
+    }
+}
