@@ -1,36 +1,41 @@
 body {
     font-family: Arial, sans-serif;
+    /* Adjusted background gradient to echo the logo's deep blue to vibrant cyan transition */
     background: linear-gradient(
         180deg,
-        #05070d,
-        #0b1220,
-        #162338
+        #061021,
+        #0b1c3a,
+        #0c3156
     );
 
-    color: white;
+    color: #ffffff;
     margin: 0;
     padding: 20px;
 }
 
 h1 {
-    color: #4ea8ff;
+    /* Bright cyan-blue matching the lighter tones of the logo */
+    color: #00d2ff;
 }
 
 h2 {
-    color: white;
+    color: #ffffff;
 }
+
 p {
-    color: #d0d0d0;
+    /* Shifted to a cool, light blue-gray to blend with the background */
+    color: #e2f1ff;
 }
 
 hr {
-    border: 1px solid #222;
+    border: 1px solid #142f5c;
     margin: 20px 0;
 }
 
 button {
-    background: linear-gradient(90deg, #00bfff, #0077ff);
-    color: white;
+    /* Vibrant royal blue to electric cyan gradient inspired by the logo's border and background */
+    background: linear-gradient(90deg, #0052ff, #00d9ff);
+    color: #ffffff;
     border: none;
     padding: 12px 18px;
     margin: 8px;
@@ -41,39 +46,44 @@ button {
 }
 
 button:hover {
-    background: linear-gradient(90deg, #0099ff, #0055ff);
+    background: linear-gradient(90deg, #003cc2, #00b0d4);
     transform: scale(1.1);
-    box-shadow: 0 0 20px #00bfff;
+    box-shadow: 0 0 20px #00a2ff;
 }
 
 .topbar {
-    background: #0f172a;
+    /* Dark navy base with a glowing cyber-blue bottom border */
+    background: #081124;
     padding: 12px 20px;
-    border-bottom: 2px solid #00bfff;
+    border-bottom: 2px solid #00a2ff;
 
     position: sticky;
     top: 0;
     z-index: 1000;
 }
+
 .topbar h2 {
     margin: 0;
-    color: #00bfff;
+    color: #00d2ff;
 }
+
 .menu {
     margin-top: 20px;
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
 }
+
 .news-card {
-    background :#182842;
-    border: 1px solid #2aa7ff;
+    /* Slightly lighter navy card base with a vivid border shadow */
+    background: #0f2142;
+    border: 1px solid #00a2ff;
     padding: 15px;
     border-radius: 18px;
     margin-top: 15px;
-    box-shadow:
-    0 0 18px rgba(0,180,255,.15);
+    box-shadow: 0 0 18px rgba(0, 162, 255, 0.25);
 }
+
 .topbar {
     display: flex;
     align-items: center;
@@ -85,13 +95,14 @@ button:hover {
     margin: 0;
     border-radius: 8px;
 }
+
 .logo {
     width: 60px;
     height: 60px;
     border-radius: 50%;
 }
-@media (max-width: 1000px) {
 
+@media (max-width: 1000px) {
     body {
         padding: 15px;
     }
@@ -116,6 +127,7 @@ button:hover {
         height: 60px;
     }
 }
+
 footer {
     position: fixed;
     bottom: 0;
@@ -124,22 +136,9 @@ footer {
 
     text-align: center;
     font-size: 12px;
-    color: #888;
+    color: #8faed6;
 
-    background: #0d1117;
-    padding: 8px 0;
-}
-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-
-    text-align: center;
-    font-size: 12px;
-    color: #888;
-
-    background: #0d1117;
+    background: #050b17;
     padding: 8px 0;
 }
 
@@ -149,30 +148,30 @@ footer {
 }
 
 .dropbtn {
-    background: linear-gradient(90deg, #00bfff, #0077ff);
-    color: white;
+    background: linear-gradient(90deg, #0052ff, #00d9ff);
+    color: #ffffff;
 }
 
 .dropdown-content {
     display: none;
     position: absolute;
-    background: #111827;
+    background: #0b1730;
     min-width: 180px;
     border-radius: 10px;
-    border: 1px solid #00bfff;
+    border: 1px solid #00d9ff;
     overflow: hidden;
     z-index: 999;
 }
 
 .dropdown-content a {
     display: block;
-    color: white;
+    color: #ffffff;
     text-decoration: none;
     padding: 12px;
 }
 
 .dropdown-content a:hover {
-    background: #1f2937;
+    background: #14284f;
 }
 
 .dropdown:hover .dropdown-content {
@@ -181,28 +180,32 @@ footer {
 .logo {
     cursor: pointer;
 }
+
 .community-banner {
     width: 100%;
     height: 140px;
-    background: #1b2330;
-    border-bottom: 2px solid #00bfff;
+    background: #10213d;
+    border-bottom: 2px solid #00d9ff;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #888;
+    color: #8faed6;
     font-size: 18px;
     font-weight: bold;
     overflow-x: auto;
     overflow-y: hidden;
 }
+
 .server-message {
-    background: white;
-    color: black;
+    /* Uses the crisp white of the "A" logo as a background with royal blue text */
+    background: #ffffff;
+    color: #0052ff;
     text-align: center;
     padding: 18px;
     font-size: 16px;
-    border-bottom: 1px solid #ccc;
+    border-bottom: 1px solid #00d9ff;
 }
+
 /* Container for the falling text */
 #falling-text-container {
     position: fixed;
@@ -210,15 +213,15 @@ footer {
     left: 0;
     width: 100vw;
     height: 100vh;
-    pointer-events: none; /* Lets you click through the text */
+    pointer-events: none;
     overflow: hidden;
-    z-index: 9999; /* Keeps it on top of your background */
+    z-index: 9999;
 }
 
 /* Individual falling words */
 .falling-word {
     position: absolute;
-    color: white; /* Your requested text color */
+    color: #ffffff;
     font-family: sans-serif;
     font-weight: bold;
     font-size: 24px;
@@ -228,113 +231,69 @@ footer {
     transform: rotate(0deg);
     transition: transform 0.1s linear;
 }
+
 /* Popup */
-
-.overlay{
-
-position:fixed;
-
-top:0;
-left:0;
-
-width:100%;
-height:100%;
-
-background:rgba(0,0,0,.65);
-
-display:none;
-
-justify-content:center;
-
-align-items:center;
-
-z-index:10000;
-
-backdrop-filter:blur(5px);
-
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(4, 9, 20, 0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    backdrop-filter: blur(5px);
 }
 
-.popup{
-
-width:430px;
-
-background:#17263d;
-
-border:2px solid #4ea8ff;
-
-border-radius:20px;
-
-padding:30px;
-
-text-align:center;
-
-box-shadow:0 0 35px rgba(78,168,255,.25);
-
+.popup {
+    width: 430px;
+    background: #0b1a33;
+    border: 2px solid #00d2ff;
+    border-radius: 20px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 0 35px rgba(0, 210, 255, 0.25);
 }
 
-.popupLogo{
-
-width:90px;
-
-border-radius:50%;
-
-margin-bottom:15px;
-
+.popupLogo {
+    width: 90px;
+    border-radius: 50%;
+    margin-bottom: 15px;
 }
 
-.popup input{
-
-width:100%;
-
-padding:13px;
-
-margin-top:12px;
-
-border:none;
-
-border-radius:10px;
-
-box-sizing:border-box;
-
-font-size:15px;
-
+.popup input {
+    width: 100%;
+    padding: 13px;
+    margin-top: 12px;
+    border: 1px solid #0052ff;
+    background-color: #050b17;
+    color: white;
+    border-radius: 10px;
+    box-sizing: border-box;
+    font-size: 15px;
 }
 
-.popup button{
-
-width:100%;
-
-margin-top:20px;
-
+.popup button {
+    width: 100%;
+    margin-top: 20px;
 }
 
-.checkbox{
-
-display:block;
-
-text-align:left;
-
-margin-top:15px;
-
-font-size:14px;
-
+.checkbox {
+    display: block;
+    text-align: left;
+    margin-top: 15px;
+    font-size: 14px;
 }
 
-.checkbox input{
-
-width:auto;
-
-margin-right:8px;
-
+.checkbox input {
+    width: auto;
+    margin-right: 8px;
 }
 
-#switchMode{
-
-color:#4ea8ff;
-
-font-weight:bold;
-
-text-decoration:none;
-
+#switchMode {
+    color: #00d2ff;
+    font-weight: bold;
+    text-decoration: none;
 }
-
