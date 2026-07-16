@@ -69,6 +69,36 @@
     </div>
 </div>
 
+<div id="searchOverlay" class="overlay" style="display:none;">
+    <div class="popup search-popup">
+        <h2>🔍 Search Azora</h2>
+        <div class="search-tabs">
+            <button id="searchUsersTab" class="tab-btn active" onclick="setSearchTab('users')">Users</button>
+            <button id="searchGamesTab" class="tab-btn" onclick="setSearchTab('games')">Games</button>
+        </div>
+        <input id="searchInput" type="text" placeholder="Search usernames..." oninput="performSearch()">
+        
+        <div class="search-results" id="searchResultsContainer">
+            </div>
+        <button onclick="closeSearch()">Close</button>
+    </div>
+</div>
+
+<div id="settingsOverlay" class="overlay" style="display:none;">
+    <div class="popup settings-popup">
+        <h2>⚙️ Settings</h2>
+        <div style="text-align: left; margin: 15px 0;">
+            <label style="color: #1e60ff; font-weight: bold; display: block; margin-bottom: 5px;">Visual Effects</label>
+            <label class="checkbox" style="color: #333 !important;">
+                <input type="checkbox" id="fallingTextToggle" checked onchange="toggleFallingText()"> Enable Falling Phrases
+            </label>
+        </div>
+        <hr>
+        <button onclick="logoutUser()" style="background: #ff3b30; color: #ffffff;">Log Out</button>
+        <button onclick="closeSettings()">Close</button>
+    </div>
+</div>
+
 <div id="serverMessage" class="server-message" style="display:none;">
     ⚠️ The website is currently experiencing heavy traffic.
     <br>
@@ -96,8 +126,9 @@
     </div>
 
     <div id="userPanel" style="display:none;">
-        <button id="searchButton">🔍 Search</button>
+        <button id="searchButton" onclick="openSearch()">🔍 Search</button>
         <button id="profileButton">👤 Username</button>
+        <button id="settingsButton" onclick="openSettings()">⚙️ Settings</button>
     </div>
 </div>
 
@@ -144,6 +175,7 @@
         </p>
     </div>
 </div>
+
 <div class="main-content-layout">
     <h1>Welcome to Azora</h1>
     <p>Welcome to Azora! Build games, customize avatars, and have fun!</p>

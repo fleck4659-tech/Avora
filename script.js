@@ -3,6 +3,26 @@ const fallSpeed = 2; // Higher number = faster fall
 const rotationSpeed = 0.5; // Higher number = faster rotation
 const phrases = ["wow!", "this is cool!", "awesome!", "amazing!", "leemoon!"];
 
+let fallingTextActive = true;
+let spawnInterval;
+
+// Mock database for search demonstration
+const database = {
+    users: [
+        { username: "603blox", profileLink: "https://www.roblox.com/users/9744531169/profile" },
+        { username: "AzoraDeveloper", profileLink: "#" },
+        { username: "LeemoonFan", profileLink: "#" },
+        { username: "Guest1337", profileLink: "#" }
+    ],
+    games: [
+        { title: "Super Azora Run", author: "603blox", link: "#" },
+        { title: "Avatar Customizer Tycoon", author: "AzoraDeveloper", link: "#" },
+        { title: "Sword Fighting Arena", author: "System", link: "#" }
+    ]
+};
+
+let currentSearchTab = "users";
+
 // Create the container automatically
 const container = document.createElement('div');
 container.id = 'falling-text-container';
@@ -10,6 +30,7 @@ document.body.appendChild(container);
 
 // Function to spawn a random word
 function spawnWord() {
+    if (!fallingTextActive) return;
     const word = document.createElement('div');
     word.className = 'falling-word';
     word.innerText = phrases[Math.floor(Math.random() * phrases.length)];
@@ -38,7 +59,90 @@ function spawnWord() {
 }
 
 // Spawn a new word every 10.0 seconds
-setInterval(spawnWord, 10000);
+function startFallingPhrases() {
+    if (spawnInterval) clearInterval(spawnInterval);
+    spawnInterval = setInterval(spawnWord, 10000);
+}
+startFallingPhrases();
+
+// --- Settings Logic ---
+function openSettings() {
+    document.getElementById("settingsOverlay").style.display = "flex";
+}
+function closeSettings() {
+    document.getElementById("settingsOverlay").style.display = "none";
+}
+function toggleFallingText() {
+    fallingTextActive = document.getElementById("fallingTextToggle").checked;
+    if (!fallingTextActive) {
+        container.innerHTML = ""; // instantly clear screen of phrases
+    }
+}
+function logoutUser() {
+    localStorage.removeItem("loggedIn");
+    localStorage.removeItem("azoraAccount");
+    alert("Logged out successfully.");
+    location.reload();
+}
+
+// --- Search Logic ---
+function openSearch() {
+    document.getElementById("searchOverlay").style.display = "flex";
+    document.getElementById("searchInput").focus();
+    performSearch();
+}
+function closeSearch() {
+    document.getElementById("searchOverlay").style.display = "none";
+}
+function setSearchTab(tab) {
+    currentSearchTab = tab;
+    document.getElementById("searchUsersTab").classList.toggle("active", tab === "users");
+    document.getElementById("searchGamesTab").classList.toggle("active", tab === "games");
+    document.getElementById("searchInput").placeholder = tab === "users" ? "Search usernames..." : "Search games...";
+    performSearch();
+}
+function performSearch() {
+    const query = document.getElementById("searchInput").value.trim().toLowerCase();
+    const resultsContainer = document.getElementById("searchResultsContainer");
+    resultsContainer.innerHTML = "";
+
+    // Load custom dynamic profiles from local storage to include newly made accounts in user searches!
+    let localUsers = [];
+    const localAcc = localStorage.getItem("azoraAccount");
+    if (localAcc) {
+        try {
+            const parsed = JSON.parse(localAcc);
+            localUsers.push({ username: parsed.username, profileLink: "#" });
+        } catch (e) {}
+    }
+
+    const allUsers = [...database.users, ...localUsers];
+    // Remove duplicates from demo array
+    const uniqueUsers = Array.from(new Map(allUsers.map(item => [item.username.toLowerCase(), item])).values());
+
+    let results = [];
+    if (currentSearchTab === "users") {
+        results = uniqueUsers.filter(u => u.username.toLowerCase().includes(query));
+    } else {
+        results = database.games.filter(g => g.title.toLowerCase().includes(query) || g.author.toLowerCase().includes(query));
+    }
+
+    if (results.length === 0) {
+        resultsContainer.innerHTML = "<div class='no-results'>No results found.</div>";
+        return;
+    }
+
+    results.forEach(item => {
+        const row = document.createElement("div");
+        row.className = "search-result-item";
+        if (currentSearchTab === "users") {
+            row.innerHTML = `👤 <strong>${item.username}</strong> <a href="${item.profileLink}" class="search-action-btn">View</a>`;
+        } else {
+            row.innerHTML = `🎮 <strong>${item.title}</strong> <span class="creator-by">by ${item.author}</span> <a href="${item.link}" class="search-action-btn">Play</a>`;
+        }
+        resultsContainer.appendChild(row);
+    });
+}
 
 // --- Dropdown Socials logic ---
 let lockedOpen = false;
@@ -70,7 +174,7 @@ function openCreateAccount() {
     document.getElementById("popupSubtitle").style.display = "block";
     document.getElementById("confirmPassword").style.display = "block";
     document.getElementById("email").style.display = "block";
-    document.querySelectorAll(".checkbox").forEach(el => el.style.display = "block");
+    document.querySelectorAll("#accountOverlay .checkbox").forEach(el => el.style.display = "block");
     document.getElementById("mainButton").innerHTML = "Create Account";
     document.getElementById("switchMode").innerHTML = "Log In";
     document.querySelector(".popup p").childNodes[0].textContent = "Already have an account? ";
@@ -82,7 +186,7 @@ function openLogin() {
     document.getElementById("popupSubtitle").style.display = "none";
     document.getElementById("confirmPassword").style.display = "none";
     document.getElementById("email").style.display = "none";
-    document.querySelectorAll(".checkbox").forEach(el => el.style.display = "none");
+    document.querySelectorAll("#accountOverlay .checkbox").forEach(el => el.style.display = "none");
     document.getElementById("mainButton").innerHTML = "Log In";
     document.getElementById("switchMode").innerHTML = "Create Account";
     document.querySelector(".popup p").childNodes[0].textContent = "Don't have an account? ";
@@ -127,7 +231,7 @@ document.getElementById("mainButton").addEventListener("click", function () {
         const username = document.getElementById("username").value.trim();
         if (username) {
             localStorage.setItem("loggedIn", "true");
-            alert("👋 Welcome back, " + username + "!");
+            alert("✨ Welcome back, " + username + "!");
             location.reload();
         }
     }
@@ -143,20 +247,22 @@ document.getElementById("switchMode").addEventListener("click", function (e) {
     }
 });
 
-// Close popup when clicking outside the box
-document.getElementById("accountOverlay").addEventListener("click", function (e) {
-    if (e.target === this) {
-        this.style.display = "none";
-    }
+// Close popups when clicking outside the box
+document.querySelectorAll(".overlay").forEach(overlay => {
+    overlay.addEventListener("click", function (e) {
+        if (e.target === this) {
+            this.style.display = "none";
+        }
+    });
 });
 
 // --- Creator site handling ---
 function handleCreateClick() {
     const loggedIn = localStorage.getItem("loggedIn");
     if (loggedIn === "true") {
-        window.open("https://your-creator-website-link.com", "_blank");
+        window.open("creator.html", "_blank");
     } else {
-        alert("⚠️ You need an account to save your games! Please sign up first.");
+        alert("Please sign up first to access the Creator Studio!");
         openCreateAccount();
     }
 }
@@ -179,7 +285,6 @@ function closeTOS() {
 }
 
 // --- 3D Avatar Global Variables ---
-// Head, Torso, Left Arm, Right Arm, Left Leg, Right Leg
 let scene, camera, renderer;
 let headMesh, torsoMesh, leftArmMesh, rightArmMesh, leftLegMesh, rightLegMesh;
 
@@ -189,7 +294,7 @@ function init3DAvatar() {
 
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
-    camera.position.set(0, 1.3, 4.2); // Slipped down slightly to center the whole body
+    camera.position.set(0, 1.3, 4.2);
 
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
@@ -203,44 +308,36 @@ function init3DAvatar() {
 
     const characterGroup = new THREE.Group();
 
-    // 1. Head (0.6 x 0.6 x 0.6)
     const headGeo = new THREE.BoxGeometry(0.6, 0.6, 0.6);
     const headMat = new THREE.MeshLambertMaterial({ color: 0xffcc00 });
     headMesh = new THREE.Mesh(headGeo, headMat);
     headMesh.position.y = 1.1;
     characterGroup.add(headMesh);
 
-    // 2. Torso (0.8 x 1.0 x 0.4)
     const torsoGeo = new THREE.BoxGeometry(0.8, 1.0, 0.4);
     const torsoMat = new THREE.MeshLambertMaterial({ color: 0x1e60ff });
     torsoMesh = new THREE.Mesh(torsoGeo, torsoMat);
     torsoMesh.position.y = 0.3;
     characterGroup.add(torsoMesh);
 
-    // 3. Arms (Each is 0.35 x 1.0 x 0.35)
     const armGeo = new THREE.BoxGeometry(0.35, 1.0, 0.35);
     const armMat = new THREE.MeshLambertMaterial({ color: 0xffcc00 });
 
-    // Left Arm (Placed to the left of the torso)
     leftArmMesh = new THREE.Mesh(armGeo, armMat);
     leftArmMesh.position.set(-0.6, 0.3, 0);
     characterGroup.add(leftArmMesh);
 
-    // Right Arm (Placed to the right of the torso)
     rightArmMesh = new THREE.Mesh(armGeo, armMat);
     rightArmMesh.position.set(0.6, 0.3, 0);
     characterGroup.add(rightArmMesh);
 
-    // 4. Legs (Each is 0.35 x 1.0 x 0.35)
     const legGeo = new THREE.BoxGeometry(0.35, 1.0, 0.35);
     const legMat = new THREE.MeshLambertMaterial({ color: 0x00ebd4 });
 
-    // Left Leg
     leftLegMesh = new THREE.Mesh(legGeo, legMat);
     leftLegMesh.position.set(-0.2, -0.7, 0);
     characterGroup.add(leftLegMesh);
 
-    // Right Leg
     rightLegMesh = new THREE.Mesh(legGeo, legMat);
     rightLegMesh.position.set(0.2, -0.7, 0);
     characterGroup.add(rightLegMesh);
@@ -249,13 +346,13 @@ function init3DAvatar() {
 
     function animate() {
         requestAnimationFrame(animate);
-        characterGroup.rotation.y += 0.008; // Smooth preview rotation
+        characterGroup.rotation.y += 0.008;
         renderer.render(scene, camera);
     }
     animate();
 }
 
-// --- Dynamic Color Moderation Rules (Checks all 6 parts now) ---
+// --- Dynamic Color Moderation Rules ---
 const RESTRICTED_COLORS = {
     white: ["#ffffff", "#f0f0f0", "#e6e6e6"],
     red: ["#ff0000", "#e60000", "#cc0000"],
@@ -273,7 +370,6 @@ function moderateCharacterColors(head, torso, leftArm, rightArm, leftLeg, rightL
     let safeTorso = cTorso;
     let moderated = false;
 
-    // Check if ALL parts are matching a restricted group color (meaning a single solid color naked skin-tone attempt)
     for (const colorGroup in RESTRICTED_COLORS) {
         const restrictedList = RESTRICTED_COLORS[colorGroup];
         if (
@@ -284,7 +380,7 @@ function moderateCharacterColors(head, torso, leftArm, rightArm, leftLeg, rightL
             restrictedList.includes(cLeftLeg) &&
             restrictedList.includes(cRightLeg)
         ) {
-            safeTorso = "#1e293b"; // Auto-moderated Torso Shirt Color (Dark slate)
+            safeTorso = "#1e293b"; 
             moderated = true;
             break;
         }
@@ -311,7 +407,6 @@ function updateAvatarColors() {
 
     const validated = moderateCharacterColors(rawHead, rawTorso, rawLeftArm, rawRightArm, rawLeftLeg, rawRightLeg);
 
-    // Real-time render color updates
     headMesh.material.color.set(validated.head);
     torsoMesh.material.color.set(validated.torso);
     leftArmMesh.material.color.set(validated.leftArm);
@@ -330,7 +425,7 @@ function updateAvatarColors() {
 function saveAvatar() {
     const account = JSON.parse(localStorage.getItem("azoraAccount"));
     if (!account) {
-        alert("🔒 Please log in or create an account to save your custom 3D avatar!");
+        alert("Please log in or create an account to save your custom 3D avatar!");
         return;
     }
 
@@ -354,7 +449,7 @@ function saveAvatar() {
     };
 
     localStorage.setItem("azoraAccount", JSON.stringify(account));
-    alert("💾 3D Avatar saved successfully to your Azora account!");
+    alert("3D Avatar saved successfully to your Azora account!");
 }
 
 // --- App Start ---
@@ -367,10 +462,9 @@ window.addEventListener("DOMContentLoaded", () => {
         const account = JSON.parse(localStorage.getItem("azoraAccount"));
         if (account) {
             document.getElementById("guestButtons").style.display = "none";
-            document.getElementById("userPanel").style.display = "block";
+            document.getElementById("userPanel").style.display = "flex";
             document.getElementById("profileButton").innerHTML = "👤 " + account.username;
             
-            // Populate Avatar Form colors
             if (account.avatar) {
                 document.getElementById("colorHead").value = account.avatar.head || "#ffcc00";
                 document.getElementById("colorTorso").value = account.avatar.torso || "#1e60ff";
