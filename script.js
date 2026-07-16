@@ -97,13 +97,17 @@ function createAccount() {
         return;
     }
 
+    // Default character customization template matching the 6-joint setup
     const account = {
         username: username,
         password: password,
         avatar: {
             head: "#ffcc00",
             torso: "#1e60ff",
-            pants: "#00ebd4",
+            leftArm: "#ffcc00",
+            rightArm: "#ffcc00",
+            leftLeg: "#00ebd4",
+            rightLeg: "#00ebd4",
             face: "default"
         }
     };
@@ -174,43 +178,10 @@ function closeTOS() {
     document.getElementById("tosOverlay").style.display = "none";
 }
 
-// --- Color Moderation Rules ---
-const RESTRICTED_COLORS = {
-    white: ["#ffffff", "#f0f0f0", "#e6e6e6"],
-    red: ["#ff0000", "#e60000", "#cc0000"],
-    blue: ["#0000ff", "#0000e6", "#0000cc"]
-};
-
-function moderateCharacterColors(headColor, torsoColor, legsColor) {
-    const head = headColor.toLowerCase();
-    const torso = torsoColor.toLowerCase();
-    const legs = legsColor.toLowerCase();
-
-    let safeTorso = torso;
-    let moderated = false;
-
-    for (const colorGroup in RESTRICTED_COLORS) {
-        const restrictedList = RESTRICTED_COLORS[colorGroup];
-        if (restrictedList.includes(head) && 
-            restrictedList.includes(torso) && 
-            restrictedList.includes(legs)) {
-            
-            safeTorso = "#1e293b"; // Dark slate torso
-            moderated = true;
-            break;
-        }
-    }
-
-    return {
-        head: head,
-        torso: safeTorso,
-        legs: legs,
-        wasModerated: moderated
-    };
-}
-
-// --- 3D Avatar Global Variables & Scene ---
-let scene, camera, renderer, headMesh, torsoMesh, leftLegMesh, rightLegMesh;
+// --- 3D Avatar Global Variables ---
+// Head, Torso, Left Arm, Right Arm, Left Leg, Right Leg
+let scene, camera, renderer;
+let headMesh, torsoMesh, leftArmMesh, rightArmMesh, leftLegMesh, rightLegMesh;
 
 function init3DAvatar() {
     const container = document.getElementById("avatar3d-canvas");
@@ -218,7 +189,7 @@ function init3DAvatar() {
 
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
-    camera.position.set(0, 1.4, 4.2);
+    camera.position.set(0, 1.3, 4.2); // Slipped down slightly to center the whole body
 
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
@@ -232,52 +203,121 @@ function init3DAvatar() {
 
     const characterGroup = new THREE.Group();
 
-    // 1. Head
+    // 1. Head (0.6 x 0.6 x 0.6)
     const headGeo = new THREE.BoxGeometry(0.6, 0.6, 0.6);
     const headMat = new THREE.MeshLambertMaterial({ color: 0xffcc00 });
     headMesh = new THREE.Mesh(headGeo, headMat);
     headMesh.position.y = 1.1;
     characterGroup.add(headMesh);
 
-    // 2. Torso
+    // 2. Torso (0.8 x 1.0 x 0.4)
     const torsoGeo = new THREE.BoxGeometry(0.8, 1.0, 0.4);
     const torsoMat = new THREE.MeshLambertMaterial({ color: 0x1e60ff });
     torsoMesh = new THREE.Mesh(torsoGeo, torsoMat);
     torsoMesh.position.y = 0.3;
     characterGroup.add(torsoMesh);
 
-    // 3. Legs
-    const legGeo = new THREE.BoxGeometry(0.35, 0.8, 0.35);
+    // 3. Arms (Each is 0.35 x 1.0 x 0.35)
+    const armGeo = new THREE.BoxGeometry(0.35, 1.0, 0.35);
+    const armMat = new THREE.MeshLambertMaterial({ color: 0xffcc00 });
+
+    // Left Arm (Placed to the left of the torso)
+    leftArmMesh = new THREE.Mesh(armGeo, armMat);
+    leftArmMesh.position.set(-0.6, 0.3, 0);
+    characterGroup.add(leftArmMesh);
+
+    // Right Arm (Placed to the right of the torso)
+    rightArmMesh = new THREE.Mesh(armGeo, armMat);
+    rightArmMesh.position.set(0.6, 0.3, 0);
+    characterGroup.add(rightArmMesh);
+
+    // 4. Legs (Each is 0.35 x 1.0 x 0.35)
+    const legGeo = new THREE.BoxGeometry(0.35, 1.0, 0.35);
     const legMat = new THREE.MeshLambertMaterial({ color: 0x00ebd4 });
+
+    // Left Leg
     leftLegMesh = new THREE.Mesh(legGeo, legMat);
-    leftLegMesh.position.set(-0.2, -0.6, 0);
+    leftLegMesh.position.set(-0.2, -0.7, 0);
     characterGroup.add(leftLegMesh);
 
+    // Right Leg
     rightLegMesh = new THREE.Mesh(legGeo, legMat);
-    rightLegMesh.position.set(0.2, -0.6, 0);
+    rightLegMesh.position.set(0.2, -0.7, 0);
     characterGroup.add(rightLegMesh);
 
     scene.add(characterGroup);
 
     function animate() {
         requestAnimationFrame(animate);
-        characterGroup.rotation.y += 0.008; // Idle rotation
+        characterGroup.rotation.y += 0.008; // Smooth preview rotation
         renderer.render(scene, camera);
     }
     animate();
 }
 
+// --- Dynamic Color Moderation Rules (Checks all 6 parts now) ---
+const RESTRICTED_COLORS = {
+    white: ["#ffffff", "#f0f0f0", "#e6e6e6"],
+    red: ["#ff0000", "#e60000", "#cc0000"],
+    blue: ["#0000ff", "#0000e6", "#0000cc"]
+};
+
+function moderateCharacterColors(head, torso, leftArm, rightArm, leftLeg, rightLeg) {
+    const cHead = head.toLowerCase();
+    const cTorso = torso.toLowerCase();
+    const cLeftArm = leftArm.toLowerCase();
+    const cRightArm = rightArm.toLowerCase();
+    const cLeftLeg = leftLeg.toLowerCase();
+    const cRightLeg = rightLeg.toLowerCase();
+
+    let safeTorso = cTorso;
+    let moderated = false;
+
+    // Check if ALL parts are matching a restricted group color (meaning a single solid color naked skin-tone attempt)
+    for (const colorGroup in RESTRICTED_COLORS) {
+        const restrictedList = RESTRICTED_COLORS[colorGroup];
+        if (
+            restrictedList.includes(cHead) && 
+            restrictedList.includes(cTorso) && 
+            restrictedList.includes(cLeftArm) &&
+            restrictedList.includes(cRightArm) &&
+            restrictedList.includes(cLeftLeg) &&
+            restrictedList.includes(cRightLeg)
+        ) {
+            safeTorso = "#1e293b"; // Auto-moderated Torso Shirt Color (Dark slate)
+            moderated = true;
+            break;
+        }
+    }
+
+    return {
+        head: cHead,
+        torso: safeTorso,
+        leftArm: cLeftArm,
+        rightArm: cRightArm,
+        leftLeg: cLeftLeg,
+        rightLeg: cRightLeg,
+        wasModerated: moderated
+    };
+}
+
 function updateAvatarColors() {
     const rawHead = document.getElementById("colorHead").value;
     const rawTorso = document.getElementById("colorTorso").value;
-    const rawLegs = document.getElementById("colorLegs").value;
+    const rawLeftArm = document.getElementById("colorLeftArm").value;
+    const rawRightArm = document.getElementById("colorRightArm").value;
+    const rawLeftLeg = document.getElementById("colorLeftLeg").value;
+    const rawRightLeg = document.getElementById("colorRightLeg").value;
 
-    const validated = moderateCharacterColors(rawHead, rawTorso, rawLegs);
+    const validated = moderateCharacterColors(rawHead, rawTorso, rawLeftArm, rawRightArm, rawLeftLeg, rawRightLeg);
 
+    // Real-time render color updates
     headMesh.material.color.set(validated.head);
     torsoMesh.material.color.set(validated.torso);
-    leftLegMesh.material.color.set(validated.legs);
-    rightLegMesh.material.color.set(validated.legs);
+    leftArmMesh.material.color.set(validated.leftArm);
+    rightArmMesh.material.color.set(validated.rightArm);
+    leftLegMesh.material.color.set(validated.leftLeg);
+    rightLegMesh.material.color.set(validated.rightLeg);
 
     const warning = document.getElementById("modWarning");
     if (validated.wasModerated) {
@@ -290,20 +330,26 @@ function updateAvatarColors() {
 function saveAvatar() {
     const account = JSON.parse(localStorage.getItem("azoraAccount"));
     if (!account) {
-        alert("⚠️ Please log in or create an account to save your custom 3D avatar!");
+        alert("🔒 Please log in or create an account to save your custom 3D avatar!");
         return;
     }
 
     const validated = moderateCharacterColors(
         document.getElementById("colorHead").value,
         document.getElementById("colorTorso").value,
-        document.getElementById("colorLegs").value
+        document.getElementById("colorLeftArm").value,
+        document.getElementById("colorRightArm").value,
+        document.getElementById("colorLeftLeg").value,
+        document.getElementById("colorRightLeg").value
     );
 
     account.avatar = {
         head: validated.head,
         torso: validated.torso,
-        pants: validated.legs,
+        leftArm: validated.leftArm,
+        rightArm: validated.rightArm,
+        leftLeg: validated.leftLeg,
+        rightLeg: validated.rightLeg,
         face: "default"
     };
 
@@ -328,7 +374,10 @@ window.addEventListener("DOMContentLoaded", () => {
             if (account.avatar) {
                 document.getElementById("colorHead").value = account.avatar.head || "#ffcc00";
                 document.getElementById("colorTorso").value = account.avatar.torso || "#1e60ff";
-                document.getElementById("colorLegs").value = account.avatar.pants || "#00ebd4";
+                document.getElementById("colorLeftArm").value = account.avatar.leftArm || "#ffcc00";
+                document.getElementById("colorRightArm").value = account.avatar.rightArm || "#ffcc00";
+                document.getElementById("colorLeftLeg").value = account.avatar.leftLeg || "#00ebd4";
+                document.getElementById("colorRightLeg").value = account.avatar.rightLeg || "#00ebd4";
                 updateAvatarColors();
             }
         }

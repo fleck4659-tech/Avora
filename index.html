@@ -110,14 +110,33 @@
     <div class="customizer-controls">
         <h3>My Avatar</h3>
         
-        <label>Head Color:</label>
+        <label>Head:</label>
         <input type="color" id="colorHead" value="#ffcc00" onchange="updateAvatarColors()">
 
-        <label>Torso Color:</label>
+        <label>Torso:</label>
         <input type="color" id="colorTorso" value="#1e60ff" onchange="updateAvatarColors()">
 
-        <label>Legs Color:</label>
-        <input type="color" id="colorLegs" value="#00ebd4" onchange="updateAvatarColors()">
+        <div style="display: flex; gap: 8px;">
+            <div style="flex: 1;">
+                <label>Left Arm:</label>
+                <input type="color" id="colorLeftArm" value="#ffcc00" onchange="updateAvatarColors()">
+            </div>
+            <div style="flex: 1;">
+                <label>Right Arm:</label>
+                <input type="color" id="colorRightArm" value="#ffcc00" onchange="updateAvatarColors()">
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+            <div style="flex: 1;">
+                <label>Left Leg:</label>
+                <input type="color" id="colorLeftLeg" value="#00ebd4" onchange="updateAvatarColors()">
+            </div>
+            <div style="flex: 1;">
+                <label>Right Leg:</label>
+                <input type="color" id="colorRightLeg" value="#00ebd4" onchange="updateAvatarColors()">
+            </div>
+        </div>
 
         <button onclick="saveAvatar()">Save Avatar</button>
         <p id="modWarning" style="color: #ff3b30; display: none; font-size: 11px; font-weight: bold; margin-top: 5px; text-align: center;">
@@ -125,7 +144,6 @@
         </p>
     </div>
 </div>
-
 <div class="main-content-layout">
     <h1>Welcome to Azora</h1>
     <p>Welcome to Azora! Build games, customize avatars, and have fun!</p>
