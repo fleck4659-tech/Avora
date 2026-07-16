@@ -43,102 +43,101 @@ function spawnWord() {
 
 // Spawn a new word every 10.0 seconds (10000 milliseconds)
 setInterval(spawnWord, 10000);
-function openCreateAccount(){
 
-document.getElementById("accountOverlay").style.display="flex";
+// --- Popup Modal Logic ---
 
-document.getElementById("popupTitle").innerHTML="Join Azora";
-
-document.getElementById("mainButton").innerHTML="Create Account";
-
+function openCreateAccount() {
+    document.getElementById("accountOverlay").style.display = "flex";
+    document.getElementById("popupTitle").innerHTML = "Join Azora";
+    document.getElementById("popupSubtitle").style.display = "block";
+    document.getElementById("confirmPassword").style.display = "block";
+    document.getElementById("email").style.display = "block";
+    document.querySelectorAll(".checkbox").forEach(el => el.style.display = "block");
+    document.getElementById("mainButton").innerHTML = "Create Account";
+    document.getElementById("switchMode").innerHTML = "Log In";
+    document.querySelector(".popup p").childNodes[0].textContent = "Already have an account? ";
 }
 
-function openLogin(){
+function openLogin() {
+    document.getElementById("accountOverlay").style.display = "flex";
+    document.getElementById("popupTitle").innerHTML = "Welcome Back!";
+    document.getElementById("popupSubtitle").style.display = "none";
+    document.getElementById("confirmPassword").style.display = "none";
+    document.getElementById("email").style.display = "none";
+    document.querySelectorAll(".checkbox").forEach(el => el.style.display = "none");
+    document.getElementById("mainButton").innerHTML = "Log In";
+    document.getElementById("switchMode").innerHTML = "Create Account";
+    document.querySelector(".popup p").childNodes[0].textContent = "Don't have an account? ";
+}
 
-function createAccount(){
+function createAccount() {
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value;
 
-    const username =
-    document.getElementById("username").value;
-
-    const password =
-    document.getElementById("password").value;
+    if (!username || !password) {
+        alert("Please fill out all required fields!");
+        return;
+    }
 
     const account = {
-
         username: username,
-
         password: password,
-
-        avatar:{
-
-            head:"default",
-
-            shirt:"default",
-
-            pants:"default",
-
-            face:"default"
-
+        avatar: {
+            head: "default",
+            shirt: "default",
+            pants: "default",
+            face: "default"
         }
-
     };
 
-    localStorage.setItem(
-    "azoraAccount",
-    JSON.stringify(account)
-);
+    localStorage.setItem("azoraAccount", JSON.stringify(account));
+    localStorage.setItem("loggedIn", "true");
 
-localStorage.setItem(
-    "loggedIn",
-    "true"
-);
-
-alert(
-    "🎉 Welcome to Azora, " +
-    username +
-    "!"
-);
-
+    alert("🎉 Welcome to Azora, " + username + "!");
+    location.reload(); // Refresh to update UI panel state
 }
+
+// Attach main button logic once (not inside functions)
 document.getElementById("mainButton").addEventListener("click", function () {
-
-    if (document.getElementById("mainButton").innerHTML === "Create Account") {
-
+    if (this.innerHTML === "Create Account") {
         createAccount();
-
-    }
-
-});
-document.getElementById("accountOverlay").style.display="flex";
-
-document.getElementById("popupTitle").innerHTML="Welcome Back!";
-
-document.getElementById("mainButton").innerHTML="Log In";
-
-}
-// Check if the user is already logged in
-
-window.onload = function () {
-
-    const loggedIn = localStorage.getItem("loggedIn");
-
-    if (loggedIn === "true") {
-
-        const account = JSON.parse(
-            localStorage.getItem("azoraAccount")
-        );
-
-        if (account) {
-
-            document.getElementById("guestButtons").style.display = "none";
-
-            document.getElementById("userPanel").style.display = "block";
-
-            document.getElementById("profileButton").innerHTML =
-                "👤 " + account.username;
-
+    } else {
+        // Log in action
+        const username = document.getElementById("username").value.trim();
+        if (username) {
+            localStorage.setItem("loggedIn", "true");
+            alert("👋 Welcome back, " + username + "!");
+            location.reload();
         }
-
     }
+});
 
+// Switch Mode Toggle link inside the popup
+document.getElementById("switchMode").addEventListener("click", function (e) {
+    e.preventDefault();
+    if (this.innerHTML === "Log In") {
+        openLogin();
+    } else {
+        openCreateAccount();
+    }
+});
+
+// Close popup when clicking outside the box
+document.getElementById("accountOverlay").addEventListener("click", function (e) {
+    if (e.target === this) {
+        this.style.display = "none";
+    }
+});
+
+// Check if the user is already logged in
+window.onload = function () {
+    const loggedIn = localStorage.getItem("loggedIn");
+    if (loggedIn === "true") {
+        const account = JSON.parse(localStorage.getItem("azoraAccount"));
+        if (account) {
+            document.getElementById("guestButtons").style.display = "none";
+            document.getElementById("userPanel").style.display = "block";
+            document.getElementById("profileButton").innerHTML = "👤 " + account.username;
+        }
+    }
 };
