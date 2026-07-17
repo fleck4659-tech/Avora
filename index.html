@@ -5,14 +5,170 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Azora.HaveFun</title>
     <link rel="stylesheet" href="style.css">
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        /* Modern Marketplace & Subscriptions Interface Styles */
+        .currency-bar {
+            display: flex;
+            gap: 15px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            align-items: center;
+        }
+        .coin-txt { color: #ffd700; }
+        .diamond-txt { color: #00bfff; }
+        
+        .tab-menu-horizontal {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .market-section, .sub-section {
+            background: rgba(17, 24, 39, 0.95);
+            border: 2px solid #00bfff;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 0 25px rgba(0, 191, 255, 0.25);
+            margin: 20px auto;
+            max-width: 900px;
+        }
+
+        .membership-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .membership-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .membership-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 191, 255, 0.2);
+        }
+
+        .membership-card.featured {
+            border: 2px solid #00bfff;
+            background: rgba(0, 191, 255, 0.05);
+            box-shadow: 0 0 15px rgba(0, 191, 255, 0.2);
+        }
+
+        .clothing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .clothing-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            position: relative;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .clothing-card:hover {
+            border-color: #00bfff;
+        }
+
+        .clothing-card.owned {
+            border-color: #4caf50;
+        }
+
+        .item-emoji {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .item-cost {
+            font-size: 13px;
+            font-weight: bold;
+            color: #ffd700;
+            margin-top: 5px;
+        }
+
+        .item-cost.diamonds {
+            color: #00bfff;
+        }
+
+        .vip-tag {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #00bfff;
+            color: #000;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 8px;
+        }
+
+        /* Modal Overlay for hidden Popups */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .popup {
+            background: #111827;
+            border: 2px solid #00bfff;
+            border-radius: 20px;
+            box-shadow: 0 0 25px rgba(0, 191, 255, 0.4);
+            position: relative;
+            animation: popupFade 0.3s ease-out;
+        }
+
+        @keyframes popupFade {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 30px;
+            cursor: pointer;
+            color: #fff;
+            transition: color 0.2s;
+        }
+
+        .close-btn:hover {
+            color: #ff3b30;
+        }
+    </style>
 </head>
 
 <body>
 
 <div id="accountOverlay" class="overlay" style="display:none;">
-    <div class="popup">
+    <div class="popup" style="padding: 35px; text-align: center; width: 400px;">
         <img src="logo.jpg" class="popupLogo" alt="Azora Logo">
         <h1 id="popupTitle">Join Azora</h1>
         <p id="popupSubtitle">
@@ -30,206 +186,218 @@
           <input type="checkbox" id="tosCheckbox">
           I agree to the <a href="#" onclick="openTOS(event)" style="color: #1e60ff; text-decoration: underline;">Terms of Service</a>
         </label>
+        
+        <div id="tosOverlay" class="overlay" style="display:none;">
+            <div class="popup" style="padding: 25px; text-align: left; max-width: 500px; max-height: 80vh; overflow-y: auto;">
+                <h2>Terms of Service</h2>
+                <p>Welcome to Azora. By using our services, you agree to follow our rules: be friendly, don't exploit, respect other users, and keep discussions creative and constructive.</p>
+                <button onclick="closeTOS(event)">Close</button>
+            </div>
+        </div>
 
-        <label class="checkbox">
-            <input type="checkbox"> I agree to follow the Community Rules
-        </label>
-
-        <button id="mainButton">Create Account</button>
-
-        <p>
-            Already have an account? 
-            <a href="#" id="switchMode">Log In</a>
+        <button onclick="submitAccountAction()" id="submitAccountBtn">Register</button>
+        <p id="switchAccountLink" onclick="switchAccountMode()" style="color: #1e60ff; cursor: pointer; text-decoration: underline; margin-top: 15px;">
+            Already have an account? Sign in
         </p>
     </div>
 </div>
 
-<div id="tosOverlay" class="overlay" style="display:none;">
-    <div class="popup tos-popup">
-        <h2>Terms of Service</h2>
-        
-        <div class="tos-content">
-            <h3>1. Introduction</h3>
-            <p>Welcome to Azora! By accessing or using our platform, you agree to be bound by these Terms of Service (TOS). Please read them carefully.</p>
-            
-            <h3>2. Code of Conduct</h3>
-            <p>You agree not to exploit, hack, or disrupt Azora services. Toxic behavior, harassment, and cheating are strictly prohibited.</p>
-            
-            <h3>3. Avatar Customization & Moderation</h3>
-            <p>To keep Azora safe, fully naked single-color avatars (such as solid red, solid blue, or solid white) are not allowed. System safeguards may automatically apply a darker torso to your character to ensure appropriate attire.</p>
-            
-            <h3>4. Game Publishing</h3>
-            <p>By publishing games on Azora, you grant players the right to play and explore your creations. You retain the intellectual rights to your code, but must ensure all game content complies with our Community Rules.</p>
-            
-            <h3>5. Account Data</h3>
-            <p>Your account information is stored locally on your device. Azora is not responsible for data loss caused by clearing browser cookies or local storage.</p>
+<div class="header">
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <img src="logo.jpg" class="logo" alt="Azora Logo">
+        <h1 style="margin: 0; font-size: 24px;">Azora</h1>
+    </div>
+    
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <div class="currency-bar">
+            <span class="coin-txt">🟡 <span id="coinCount">100</span> Coins</span>
+            <span class="diamond-txt">💎 <span id="diamondCount">0</span> Diamonds</span>
         </div>
 
-        <button onclick="closeTOS()">Close & Return</button>
+        <div id="guestButtons">
+            <button class="header-btn" onclick="openCreateAccount()">Join</button>
+            <button class="header-btn" onclick="openLogin()">Sign In</button>
+        </div>
+        
+        <div id="userPanel" style="display: none; align-items: center; gap: 10px;">
+            <button class="header-btn" id="profileButton" onclick="openProfile()">👤 Profile</button>
+            <button class="header-btn" onclick="logout()">Logout</button>
+        </div>
     </div>
 </div>
 
-<div id="searchOverlay" class="overlay" style="display:none;">
-    <div class="popup search-popup">
-        <h2>🔍 Search Azora</h2>
-        <div class="search-tabs">
-            <button id="searchUsersTab" class="tab-btn active" onclick="setSearchTab('users')">Users</button>
-            <button id="searchGamesTab" class="tab-btn" onclick="setSearchTab('games')">Games</button>
-        </div>
-        <input id="searchInput" type="text" placeholder="Search usernames..." oninput="performSearch()">
-        
-        <div class="search-results" id="searchResultsContainer">
+<div id="profileOverlay" class="overlay" style="display: none;">
+    <div class="popup" style="padding: 30px; text-align: center; width: 450px;">
+        <span class="close-btn" onclick="closeProfile()">&times;</span>
+        <h2>User Profile</h2>
+        <p id="profileDisplayUsername" style="font-size: 20px; font-weight: bold; color: #00bfff;"></p>
+        <p id="profileDisplayEmail" style="color: #b0c4de;"></p>
+        <p id="profileDisplayStatus" style="font-style: italic; color: #ffd700; margin-top: 10px;"></p>
+        <hr>
+        <div style="text-align: left; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-top: 15px;">
+            <h3>🎒 Inventory</h3>
+            <div id="profileInventory" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <p style="color: #888;">No items owned yet.</p>
             </div>
-        <button onclick="closeSearch()">Close</button>
+        </div>
+    </div>
+</div>
+
+<div class="main-container">
+    <div class="column-left">
+        <h2>Avatar Customizer</h2>
+        <p>Style your 3D avatar color palette directly inside the web renderer.</p>
+        
+        <div class="customizer-box">
+            <div class="control-row">
+                <label>Head Color:</label>
+                <input type="color" id="colorHead" value="#ffcc00" onchange="updateAvatarColors()">
+            </div>
+            <div class="control-row">
+                <label>Torso Color:</label>
+                <input type="color" id="colorTorso" value="#1e60ff" onchange="updateAvatarColors()">
+            </div>
+            <div class="control-row">
+                <label>Left Arm Color:</label>
+                <input type="color" id="colorLeftArm" value="#ffcc00" onchange="updateAvatarColors()">
+            </div>
+            <div class="control-row">
+                <label>Right Arm Color:</label>
+                <input type="color" id="colorRightArm" value="#ffcc00" onchange="updateAvatarColors()">
+            </div>
+            <div class="control-row">
+                <label>Left Leg Color:</label>
+                <input type="color" id="colorLeftLeg" value="#00ebd4" onchange="updateAvatarColors()">
+            </div>
+            <div class="control-row">
+                <label>Right Leg Color:</label>
+                <input type="color" id="colorRightLeg" value="#00ebd4" onchange="updateAvatarColors()">
+            </div>
+        </div>
+    </div>
+
+    <div class="column-right">
+        <div id="canvas-container"></div>
+    </div>
+</div>
+
+<div id="marketPopupOverlay" class="overlay" style="display: none;" onclick="closeMarketPopup(event)">
+    <div class="popup" style="max-width: 900px; width: 95%; max-height: 85vh; overflow-y: auto; padding: 25px;">
+        <span class="close-btn" onclick="closeMarketPopupDirect()">&times;</span>
+        
+        <div class="tab-menu-horizontal">
+            <button id="popTabBtnMarketplace" class="tab-btn" onclick="switchPopupTab('marketplace')">🛍️ Clothing Marketplace</button>
+            <button id="popTabBtnMembership" class="tab-btn" onclick="switchPopupTab('membership')">💎 Memberships</button>
+        </div>
+
+        <div class="sub-section" id="popMembershipTab" style="display: none; border: none; box-shadow: none; margin: 0; padding: 0; background: transparent;">
+            <h2 style="text-align: center;">💎 Azora Premium Memberships</h2>
+            <p style="text-align: center;">Support the platform and unlock access to exclusive features!</p>
+            <div class="membership-grid">
+                <div class="membership-card">
+                    <h3>Bronze Member</h3>
+                    <p style="font-size: 1.25rem; font-weight: bold; color: #ffd700;">⭐ $2.99 / mo</p>
+                    <hr>
+                    <ul style="text-align: left; font-size: 13px; padding-left: 20px; line-height: 1.6;">
+                        <li>🟡 100 AzoraCoins immediately</li>
+                        <li>🎨 Custom Character service options</li>
+                        <li>📛 Bronze badge on profile</li>
+                    </ul>
+                    <button onclick="buySubscription(100, 0, 100)" style="width: 100%; margin-top: 15px; background: linear-gradient(180deg, #ffd700 0%, #cca000 100%); color: #000;">Buy Bronze</button>
+                </div>
+                
+                <div class="membership-card featured">
+                    <div style="background: #00bfff; color: #000; font-size: 11px; font-weight: bold; border-radius: 10px; display: inline-block; padding: 2px 10px; margin-bottom: 5px;">BEST VALUE</div>
+                    <h3>Diamond Elite</h3>
+                    <p style="font-size: 1.25rem; font-weight: bold; color: #00bfff;">💎 $9.99 / mo</p>
+                    <hr>
+                    <ul style="text-align: left; font-size: 13px; padding-left: 20px; line-height: 1.6;">
+                        <li>🟡 1000 AzoraCoins immediately</li>
+                        <li>💎 1000 AzoraDiamonds monthly</li>
+                        <li>🎨 Special Developer Settings access</li>
+                        <li>📛 Diamond Elite badge on profile</li>
+                    </ul>
+                    <button onclick="buySubscription(1000, 1000, 1000)" style="width: 100%; margin-top: 15px; background: #00bfff; color: #000;">Buy Elite</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="market-section" id="popMarketplaceTab" style="display: none; border: none; box-shadow: none; margin: 0; padding: 0; background: transparent;">
+            <h2 style="text-align: center;">🛍️ Azora 2D Clothing Marketplace</h2>
+            <p style="text-align: center; color: #b0c4de; font-size: 14px;">Style your avatar with clean clothing designs. Diamond items require active Membership & Diamonds!</p>
+            <div class="clothing-grid" id="marketGrid">
+                </div>
+        </div>
+    </div>
+</div>
+
+<div class="developer-setting-card" style="max-width:900px; margin: 20px auto; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 20px; text-align: left;">
+    <div class="setting-info">
+        <h3>BasicCharacterService</h3>
+        <p>Forces all players in your game to use your customized character template.</p>
+    </div>
+    <label class="switch">
+        <input type="checkbox" id="charServiceToggle" onchange="toggleCharacterService()">
+        <span class="slider"></span>
+    </label>
+</div>
+
+<div class="menu">
+    <div class="dropdown">
+        <button class="dropbtn" onclick="toggleDropdown()">Other Socials ▼</button>
+        <div class="dropdown-content" id="socialDropdown">
+            <a href="https://www.youtube.com/@Official_Azora" target="_blank">YouTube</a>
+            <a href="#" target="_blank">Twitter (X)</a>
+            <a href="https://suno.com/@603blox" target="_blank">Suno</a>
+            <a href="https://www.tiktok.com/@603blox" target="_blank">TikTok</a>
+        </div>
+    </div>
+
+    <button onclick="openMarketPopup('marketplace')">🛍️ Marketplace</button>
+    <button onclick="openMarketPopup('membership')">💎 Memberships</button>
+
+    <button onclick="window.open('https://www.roblox.com/users/9744531169/profile', '_blank')">
+        Roblox Profile
+    </button>
+
+    <button onclick="handleCreateClick()">
+        🛠️ Create a Game
+    </button>
+</div>
+
+<div class="footer">
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search accounts or games..." onkeydown="handleSearchKeyPress(event)">
+        <button onclick="triggerSearch()">🔍</button>
+    </div>
+    <div class="footer-btn-container">
+        <button class="footer-btn" onclick="openSettings()">⚙️ Settings</button>
+        <button class="footer-btn" onclick="window.open('appeal.html', '_blank')">⚖️ Ban Appeals</button>
     </div>
 </div>
 
 <div id="settingsOverlay" class="overlay" style="display:none;">
-    <div class="popup settings-popup">
-        <h2>⚙️ Settings</h2>
-        <div style="text-align: left; margin: 15px 0;">
-            <label style="color: #1e60ff; font-weight: bold; display: block; margin-bottom: 5px;">Visual Effects</label>
-            <label class="checkbox" style="color: #333 !important;">
-                <input type="checkbox" id="fallingTextToggle" checked onchange="toggleFallingText()"> Enable Falling Phrases
-            </label>
-        </div>
+    <div class="popup" style="padding: 25px; text-align: center; width: 350px;">
+        <span class="close-btn" onclick="closeSettings()">&times;</span>
+        <h2>Settings Panel</h2>
         <hr>
-        <button onclick="logoutUser()" style="background: #ff3b30; color: #ffffff;">Log Out</button>
-        <button onclick="closeSettings()">Close</button>
+        <button onclick="toggleFallingText()" id="fallingTextToggleBtn" style="width: 100%; font-size: 14px; margin-top: 10px;">Disable Falling Text Words</button>
     </div>
 </div>
 
-<div id="serverMessage" class="server-message" style="display:none;">
-    ⚠️ The website is currently experiencing heavy traffic.
-    <br>
-    Please try again in 10 minutes to 1 hour.
-    <br><br>
-    We apologize for the inconvenience and appreciate your patience.
-</div>
-
-<div class="topbar">
-    <a href="https://www.youtube.com/@Official_Azora" target="_blank">
-        <img src="logo.jpg" alt="Azora Logo" class="logo">
-    </a>
-
-    <h2>Azora</h2>
-
-    <div class="topbar-right">
-        <div class="currency-display">
-            🪙 AzoraCoins: <span id="bucks">0</span>
+<div id="searchOverlay" class="overlay" style="display:none;">
+    <div class="popup" style="padding: 25px; text-align: center; width: 450px; max-height: 80vh; overflow-y: auto;">
+        <span class="close-btn" onclick="closeSearch()">&times;</span>
+        <h2>🔍 Global Search Results</h2>
+        <div class="search-tabs">
+            <button id="searchTabUsers" class="tab-btn active" onclick="switchSearchTab('users')">Users</button>
+            <button id="searchTabGames" class="tab-btn" onclick="switchSearchTab('games')">Games</button>
+        </div>
+        <div class="search-results" id="searchResultsBox">
+            <p style="color: #666; text-align: center;">No items found.</p>
         </div>
     </div>
-
-    <div id="guestButtons">
-        <button onclick="openCreateAccount()">Create Account</button>
-        <button onclick="openLogin()">Log In</button>
-    </div>
-
-    <div id="userPanel" style="display:none;">
-        <button id="searchButton" onclick="openSearch()">🔍 Search</button>
-        <button id="profileButton">👤 Username</button>
-        <button id="settingsButton" onclick="openSettings()">⚙️ Settings</button>
-    </div>
 </div>
-
-<div class="community-banner">
-    <p>🎉 Welcome to Azora! Build games. Customize avatars. Have fun.</p>
-</div>
-
-<div class="avatar-customizer-container">
-    <div id="avatar3d-canvas"></div>
-    <div class="customizer-controls">
-        <h3>My Avatar</h3>
-        
-        <label>Head:</label>
-        <input type="color" id="colorHead" value="#ffcc00" onchange="updateAvatarColors()">
-
-        <label>Torso:</label>
-        <input type="color" id="colorTorso" value="#1e60ff" onchange="updateAvatarColors()">
-
-        <div style="display: flex; gap: 8px;">
-            <div style="flex: 1;">
-                <label>Left Arm:</label>
-                <input type="color" id="colorLeftArm" value="#ffcc00" onchange="updateAvatarColors()">
-            </div>
-            <div style="flex: 1;">
-                <label>Right Arm:</label>
-                <input type="color" id="colorRightArm" value="#ffcc00" onchange="updateAvatarColors()">
-            </div>
-        </div>
-
-        <div style="display: flex; gap: 8px;">
-            <div style="flex: 1;">
-                <label>Left Leg:</label>
-                <input type="color" id="colorLeftLeg" value="#00ebd4" onchange="updateAvatarColors()">
-            </div>
-            <div style="flex: 1;">
-                <label>Right Leg:</label>
-                <input type="color" id="colorRightLeg" value="#00ebd4" onchange="updateAvatarColors()">
-            </div>
-        </div>
-
-        <button onclick="saveAvatar()">Save Avatar</button>
-        <p id="modWarning" style="color: #ff3b30; display: none; font-size: 11px; font-weight: bold; margin-top: 5px; text-align: center;">
-            ⚠️ Single-tone avatar restricted! Torso updated.
-        </p>
-    </div>
-</div>
-
-<div class="main-content-layout">
-    <h1>Welcome to Azora</h1>
-    <p>Welcome to Azora! Build games, customize avatars, and have fun!</p>
-    <p><strong>Subscribers:</strong> 2.41K</p>
-    <hr>
-
-    <div class="news-card">
-        <h2>📢 Azora News</h2>
-        <p>
-            Welcome to the official Azora website! This website is currently under construction. More features will be added soon!
-        </p>
-        <h3>Coming Soon</h3>
-        <p>More website features are currently being developed.</p>
-    </div>
-
-    <h2>About Azora</h2>
-    <p>Azora is a community-focused platform where you can build games, customize avatars, make friends, and explore creations made by players around the world. We're committed to keeping Azora friendly, creative, and fun for everyone.</p>
-
-    <div class="developer-setting-card">
-        <div class="setting-info">
-            <h3>BasicCharacterService</h3>
-            <p>Forces all players in your game to use your customized character template.</p>
-        </div>
-        
-        <label class="switch">
-            <input type="checkbox" id="charServiceToggle" onchange="toggleCharacterService()">
-            <span class="slider"></span>
-        </label>
-    </div>
-
-    <div class="menu">
-        <div class="dropdown">
-            <button class="dropbtn" onclick="toggleDropdown()">Other Socials ▼</button>
-            <div class="dropdown-content" id="socialDropdown">
-                <a href="https://www.youtube.com/@Official_Azora" target="_blank">YouTube</a>
-                <a href="#" target="_blank">Twitter (X)</a>
-                <a href="https://suno.com/@603blox" target="_blank">Suno</a>
-                <a href="https://www.tiktok.com/@603blox" target="_blank">TikTok</a>
-            </div>
-        </div>
-
-        <button onclick="window.open('https://www.roblox.com/users/9744531169/profile', '_blank')">
-            Roblox Profile
-        </button>
-
-        <button onclick="handleCreateClick()">
-            🛠️ Create a Game
-        </button>
-    </div>
-</div>
-
-<footer>
-    <p><strong>Creation date:</strong> June 26, 2026</p>
-</footer>
 
 <script src="script.js"></script>
 </body>
