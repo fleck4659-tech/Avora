@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azora Appeals</title>
+    <link rel="stylesheet" href="appeal.css">
+</head>
+
+<body>
+
+<div class="appeal-box">
+
+    <img src="logo.jpg" class="logo" alt="Azora Logo">
+
+    <h1>Azora Appeals</h1>
+
+    <p class="welcome">
+        😊 Hello!
+    </p>
+
+    <p>
+        We understand that moderation mistakes can happen.
+        <br><br>
+        If you believe your ban or termination was a mistake,
+        you may submit an appeal below.
+        <br><br>
+        Our moderation team will carefully review your appeal.
+    </p>
+
+    <hr>
+
+    <label for="appealUsername">Username</label>
+    <input id="appealUsername" type="text" placeholder="Enter your username">
+
+    <br><br>
+
+    <label for="appealType">What are you appealing?</label>
+    <select id="appealType">
+        <option>Temporary Ban</option>
+        <option>Termination</option>
+    </select>
+
+    <br><br>
+
+    <label for="appealText">Your Appeal</label>
+    <textarea id="appealText" placeholder="Hello Azora Team!
+
+I would like to appeal this decision because I think it was a mistake.
+
+Thank you."></textarea>
+
+    <br><br>
+
+    <button onclick="submitAppeal()">Send Appeal</button>
+
+    <p class="note">
+        Your appeal will eventually be reviewed by both AI and the Azora Moderation Team.
+    </p>
+
+</div>
+
+<script>
+function submitAppeal() {
+    const username = document.getElementById("appealUsername").value.trim();
+    const appealText = document.getElementById("appealText").value.trim();
+
+    if (!username) {
+        alert("Please enter your username before submitting!");
+        return;
+    }
+
+    if (!appealText || appealText.length < 10) {
+        alert("Please write a detailed appeal before sending.");
+        return;
+    }
+
+    // Success response
+    alert("✉️ Appeal successfully submitted for " + username + "!\nOur moderation team will review it shortly.");
+    
+    // Clear the form fields after submission
+    document.getElementById("appealUsername").value = "";
+    document.getElementById("appealText").value = "";
+}
+</script>
+
+</body>
+</html>

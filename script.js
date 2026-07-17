@@ -6,14 +6,25 @@ const phrases = ["wow!", "this is cool!", "awesome!", "amazing!", "leemoon!"];
 let fallingTextActive = true;
 let spawnInterval;
 
-// Mock database for search demonstration
+// --- Customizable Bot State ---
+let botName = localStorage.getItem("customBotName") || "Aza_Bot";
+
+// --- Blocked Words List (Anti-Bypass Moderation) ---
+const blockedWords = ["admin", "moderator", "staff", "exploit", "hack", "scam", "bypass", "system", "owner", "trash", "toxic"];
+
+// Silent moderation check
+function isUsernameBlocked(username) {
+    const cleanUsername = username.toLowerCase().replace(/[^a-z0-9]/g, ''); // strip special symbols
+    return blockedWords.some(word => cleanUsername.includes(word) || username.toLowerCase().includes(word));
+}
+
+// Cleaned database: The only player in the user list is your unique companion!
 const database = {
-    users: [
-        { username: "603blox", profileLink: "https://www.roblox.com/users/9744531169/profile" },
-        { username: "AzoraDeveloper", profileLink: "#" },
-        { username: "LeemoonFan", profileLink: "#" },
-        { username: "Guest1337", profileLink: "#" }
-    ],
+    get users() {
+        return [
+            { username: botName + " [Companion Bot 🤖]", profileLink: "#", isBot: true }
+        ];
+    },
     games: [
         { title: "Super Azora Run", author: "603blox", link: "#" },
         { title: "Avatar Customizer Tycoon", author: "AzoraDeveloper", link: "#" },
@@ -23,16 +34,7 @@ const database = {
 
 let currentSearchTab = "users";
 
-// Marketplace Clothes Data
-const marketplaceItems = [
-    { id: "c1", name: "Azora Classic Tee", type: "shirt", cost: 15, currency: "coins", texture: "normal", emoji: "👕" },
-    { id: "c2", name: "Neon Street Pants", type: "pants", cost: 20, currency: "coins", texture: "normal", emoji: "👖" },
-    { id: "c3", name: "Cyberpunk Jacket", type: "shirt", cost: 40, currency: "coins", texture: "normal", emoji: "🧥" },
-    { id: "d1", name: "Holo-Glitter Diamond Hoodie", type: "shirt", cost: 30, currency: "diamonds", texture: "diamond", emoji: "✨👕" },
-    { id: "d2", name: "Frosted Quartz Trouser", type: "pants", cost: 30, currency: "diamonds", texture: "diamond", emoji: "✨👖" }
-];
-
-// Create the container automatically for falling phrases
+// Create the container automatically
 const container = document.createElement('div');
 container.id = 'falling-text-container';
 document.body.appendChild(container);
@@ -43,18 +45,30 @@ function spawnWord() {
     const word = document.createElement('div');
     word.className = 'falling-word';
     word.innerText = phrases[Math.floor(Math.random() * phrases.length)];
+    
     word.style.left = Math.random() * 90 + 'vw';
-    word.style.top = '-50px';
+    word.style.top = '-50px'; // Start just above the screen
+
+    // --- Dynamic Color Customization ---
+    // If you want random colors for the phrases, keep this section. 
+    // If you prefer the original version 2.7 white/styled text, you can comment this block out!
+    const colors = ['#ffffff', '#ffd700', '#00ebd4', '#ff3b30', '#1e60ff'];
+    word.style.color = colors[Math.floor(Math.random() * colors.length)];
+    
     container.appendChild(word);
+    
     let currentTop = -50;
     let currentRotation = 0;
-    const rotationDirection = Math.random() > 0.5 ? 1 : -1;
+    const rotationDirection = Math.random() > 0.5 ? 1 : -1; 
 
+    // Moves the words down smoothly (the 2.7 classic way!)
     const interval = setInterval(() => {
         currentTop += fallSpeed;
         currentRotation += rotationSpeed * rotationDirection;
+        
         word.style.top = currentTop + 'px';
         word.style.transform = `rotate(${currentRotation}deg)`;
+        
         if (currentTop > window.innerHeight) {
             clearInterval(interval);
             word.remove();
@@ -62,150 +76,17 @@ function spawnWord() {
     }, 20);
 }
 
-function startFallingPhrases() {
-    if (spawnInterval) clearInterval(spawnInterval);
-    spawnInterval = setInterval(spawnWord, 10000);
+// Change the interval inside your DOMContentLoaded or spawning initiator block:
+clearInterval(spawnInterval); // Clear old timer
+spawnInterval = setInterval(spawnWord, 10000); // Trigger every 10 seconds!
+// Add this line inside your window / DOMContentLoaded listener:
+updateAvatarLoginGuard();
 }
 startFallingPhrases();
 
-// --- Economy Engine: Daily Allowance ---
-function checkDailyBonus(account) {
-    const today = new Date().toDateString();
-    if (account.lastLoginBonusDate !== today) {
-        account.coins = (account.coins || 0) + 10;
-        account.lastLoginBonusDate = today;
-        localStorage.setItem("azoraAccount", JSON.stringify(account));
-        alert("🪙 Daily Reward! You received your standard daily allowance of 10 AzoraCoins!");
-    }
-}
-
-// --- Dynamic Interface Refresh ---
-function updateWalletUI() {
-    const loggedIn = localStorage.getItem("loggedIn");
-    const walletBar = document.getElementById("walletDisplay");
-    if (loggedIn === "true") {
-        const account = JSON.parse(localStorage.getItem("azoraAccount"));
-        if (account) {
-            if (walletBar) walletBar.style.display = "flex";
-            document.getElementById("coinVal").innerText = account.coins || 0;
-            document.getElementById("diamondVal").innerText = account.diamonds || 0;
-            
-            // Toggle Settings Profile Customizers
-            const isMember = account.isMember === true;
-            const settingsArea = document.getElementById("memberSettingsArea");
-            const settingsHint = document.getElementById("memberSettingsHint");
-            const checkboxLabel = document.getElementById("memberCheckboxLabel");
-            const holoToggle = document.getElementById("holographicThemeToggle");
-            
-            if (settingsArea && isMember) {
-                settingsArea.classList.add("unlocked");
-                if (settingsHint) settingsHint.innerText = "🌟 Active Member Profile Verified!";
-                if (checkboxLabel) checkboxLabel.style.pointerEvents = "auto";
-                if (holoToggle) holoToggle.disabled = false;
-            }
-        }
-    } else {
-        if (walletBar) walletBar.style.display = "none";
-    }
-}
-
-// --- Currency Exchange Converter ---
-function convertDiamonds() {
-    const account = JSON.parse(localStorage.getItem("azoraAccount"));
-    if (!account) return alert("Please register or sign in to convert currencies.");
-    
-    if ((account.diamonds || 0) < 10) {
-        return alert("❌ You need at least 10 AzoraDiamonds to exchange! (10 Diamonds converts to 100 Coins)");
-    }
-    
-    account.diamonds -= 10;
-    account.coins = (account.coins || 0) + 100;
-    localStorage.setItem("azoraAccount", JSON.stringify(account));
-    updateWalletUI();
-    alert("💎 Exchange Authorized! 10 Diamonds turned into 100 AzoraCoins.");
-}
-
-// --- Member Subscriptions ---
-function buySubscription(price, coinsReward, diamondsReward) {
-    const loggedIn = localStorage.getItem("loggedIn");
-    if (loggedIn !== "true") {
-        alert("Sign up or login to checkout Premium Subscription tier plans!");
-        openCreateAccount();
-        return;
-    }
-    
-    const account = JSON.parse(localStorage.getItem("azoraAccount"));
-    account.isMember = true;
-    account.coins = (account.coins || 0) + coinsReward;
-    account.diamonds = (account.diamonds || 0) + diamondsReward;
-    
-    localStorage.setItem("azoraAccount", JSON.stringify(account));
-    updateWalletUI();
-    alert(`🎉 Success! Your account was upgraded to Member status via the $${price} Tier. Received ${coinsReward} Coins and ${diamondsReward} Diamonds!`);
-}
-
-// --- Marketplace Core ---
-function renderMarketplace() {
-    const marketGrid = document.getElementById("marketGrid");
-    if (!marketGrid) return;
-    marketGrid.innerHTML = "";
-    
-    marketplaceItems.forEach(item => {
-        const card = document.createElement("div");
-        card.className = `clothing-card ${item.texture === 'diamond' ? 'diamond-item' : ''}`;
-        
-        const currencySymbol = item.currency === "coins" ? "🪙" : "💎";
-        const costClass = item.currency === "coins" ? "coin-txt" : "diamond-txt";
-        
-        card.innerHTML = `
-            <div class="clothing-img">${item.emoji}</div>
-            <h4 style="margin: 5px 0; font-size:14px;">${item.name}</h4>
-            <p style="font-size:11px; color:#aaa; margin:2px 0;">Style: ${item.texture.toUpperCase()}</p>
-            <p class="${costClass}" style="font-weight:bold; margin: 5px 0;">${currencySymbol} ${item.cost}</p>
-            <button onclick="buyClothing('${item.id}')" style="font-size:11px; padding: 4px 10px; width:100%; border-radius: 8px; cursor: pointer; border: none; background: #fff; color: #1e60ff; font-weight: bold;">Buy Item</button>
-        `;
-        marketGrid.appendChild(card);
-    });
-}
-
-function buyClothing(itemId) {
-    const loggedIn = localStorage.getItem("loggedIn");
-    if (loggedIn !== "true") {
-        alert("You must login to proceed with marketplace purchases.");
-        openCreateAccount();
-        return;
-    }
-    
-    const account = JSON.parse(localStorage.getItem("azoraAccount"));
-    const item = marketplaceItems.find(i => i.id === itemId);
-    if (!item || !account) return;
-    
-    // Member verification for specialized clothing textures
-    if (item.texture === "diamond" && !account.isMember) {
-        return alert("🔒 This contains custom holographic textures! You must purchase an active Premium Membership subscription to buy Diamond-Colored clothes!");
-    }
-    
-    // Funds validation checks
-    if (item.currency === "coins") {
-        if ((account.coins || 0) < item.cost) return alert("❌ Insufficient AzoraCoins!");
-        account.coins -= item.cost;
-    } else {
-        if ((account.diamonds || 0) < item.cost) return alert("❌ Insufficient AzoraDiamonds!");
-        account.diamonds -= item.cost;
-    }
-    
-    if (!account.inventory) account.inventory = [];
-    account.inventory.push(itemId);
-    
-    localStorage.setItem("azoraAccount", JSON.stringify(account));
-    updateWalletUI();
-    alert(`🛍️ Successfully purchased ${item.name}! Added to avatar customizer inventory.`);
-}
-
-// Settings management controls
+// --- Settings Logic ---
 function openSettings() {
     document.getElementById("settingsOverlay").style.display = "flex";
-    updateWalletUI();
 }
 function closeSettings() {
     document.getElementById("settingsOverlay").style.display = "none";
@@ -213,27 +94,19 @@ function closeSettings() {
 function toggleFallingText() {
     fallingTextActive = document.getElementById("fallingTextToggle").checked;
     if (!fallingTextActive) {
-        container.innerHTML = "";
+        container.innerHTML = ""; // instantly clear screen of phrases
     }
 }
-function toggleHoloStyle() {
-    const toggle = document.getElementById("holographicThemeToggle");
-    if (toggle && toggle.checked) {
-        document.body.style.background = "radial-gradient(circle, #2c3e50, #000000, #1a252f)";
-        alert("✨ Space Diamond Skybox initialized! Holographic home theme loaded.");
-    } else {
-        document.body.style.background = ""; // Reset
-    }
-}
-
 function logoutUser() {
     localStorage.removeItem("loggedIn");
     localStorage.removeItem("azoraAccount");
-    alert("Signed out.");
+    alert("Logged out successfully.");
     location.reload();
+// Add this line right after your login/signup/logout storage updates run:
+updateAvatarLoginGuard();
 }
 
-// --- Core Navigation and Search Engine ---
+// --- Search Logic ---
 function openSearch() {
     document.getElementById("searchOverlay").style.display = "flex";
     document.getElementById("searchInput").focus();
@@ -290,7 +163,7 @@ function performSearch() {
     });
 }
 
-// Dropdown systems
+// --- Dropdown Socials logic ---
 let lockedOpen = false;
 function toggleDropdown() {
     const menu = document.getElementById("socialDropdown");
@@ -313,7 +186,7 @@ if (dropdown) {
     });
 }
 
-// --- Account Modals Configuration ---
+// --- Account Popup Modal Logic ---
 function openCreateAccount() {
     document.getElementById("accountOverlay").style.display = "flex";
     document.getElementById("popupTitle").innerHTML = "Join Azora";
@@ -341,18 +214,15 @@ function openLogin() {
 function createAccount() {
     const username = document.getElementById("username").value.trim();
     const password = document.getElementById("password").value;
+
     if (!username || !password) {
         alert("Please fill out all required fields!");
         return;
     }
+
     const account = {
         username: username,
         password: password,
-        coins: 10, // Daily allowance initiation
-        diamonds: 0,
-        isMember: false,
-        inventory: [],
-        lastLoginBonusDate: new Date().toDateString(),
         avatar: {
             head: "#ffcc00",
             torso: "#1e60ff",
@@ -363,10 +233,15 @@ function createAccount() {
             face: "default"
         }
     };
-    localStorage.setItem("azoraAccount", JSON.stringify(account));
+
+     const usernameInput = document.getElementById("username").value.trim();
+if (!checkRegistrationUsername(usernameInput)) {
+    return; // Stop registration completely without explaining why!
+}
     localStorage.setItem("loggedIn", "true");
-    alert("Welcome to Azora, " + username + "!");
-    location.reload();
+
+    alert("🎉 Welcome to Azora, " + username + "!");
+    location.reload(); 
 }
 
 document.getElementById("mainButton").addEventListener("click", function () {
@@ -376,12 +251,7 @@ document.getElementById("mainButton").addEventListener("click", function () {
         const username = document.getElementById("username").value.trim();
         if (username) {
             localStorage.setItem("loggedIn", "true");
-            let account = JSON.parse(localStorage.getItem("azoraAccount"));
-            if (!account) {
-                account = { username: username, coins: 10, diamonds: 0, isMember: false };
-                localStorage.setItem("azoraAccount", JSON.stringify(account));
-            }
-            alert("Welcome back, " + username + "!");
+            alert("👋 Welcome back, " + username + "!");
             location.reload();
         }
     }
@@ -404,6 +274,7 @@ document.querySelectorAll(".overlay").forEach(overlay => {
     });
 });
 
+// --- Creator site handling ---
 function handleCreateClick() {
     const loggedIn = localStorage.getItem("loggedIn");
     if (loggedIn === "true") {
@@ -414,108 +285,226 @@ function handleCreateClick() {
     }
 }
 
+// --- BasicCharacterService toggle ---
 function toggleCharacterService() {
     const isChecked = document.getElementById("charServiceToggle").checked;
     localStorage.setItem("charServiceEnabled", isChecked);
     alert(`BasicCharacterService is now ${isChecked ? "ENABLED" : "DISABLED"}!`);
 }
 
-// --- 3D Avatar Rendering (Homepage only) ---
-let avatarScene, avatarCamera, avatarRenderer;
-let avatarParts = {};
+// --- TOS Modal Toggle Logic ---
+function openTOS(event) {
+    event.preventDefault();
+    document.getElementById("tosOverlay").style.display = "flex";
+}
 
-function initAvatarCanvas() {
-    const container = document.getElementById("canvas-container");
+function closeTOS() {
+    document.getElementById("tosOverlay").style.display = "none";
+}
+
+// --- 3D Avatar Global Variables ---
+let scene, camera, renderer;
+let headMesh, torsoMesh, leftArmMesh, rightArmMesh, leftLegMesh, rightLegMesh;
+let characterGroup; // Global character holder group
+
+function init3DAvatar() {
+    const container = document.getElementById("avatar3d-canvas");
     if (!container) return;
 
-    avatarScene = new THREE.Scene();
-    avatarScene.background = new THREE.Color(0x222222);
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+    camera.position.set(0, 1.3, 4.2);
 
-    avatarCamera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
-    avatarCamera.position.set(0, 1.5, 5);
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
 
-    avatarRenderer = new THREE.WebGLRenderer({ antialias: true });
-    avatarRenderer.setSize(200, 200);
-    container.appendChild(avatarRenderer.domElement);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    directionalLight.position.set(5, 10, 7);
+    scene.add(directionalLight);
 
-    // Basic Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    avatarScene.add(ambientLight);
+    // Master Group so everything rotates as one unified model
+    characterGroup = new THREE.Group();
 
-    const pointLight = new THREE.PointLight(0xffffff, 0.8);
-    pointLight.position.set(5, 5, 5);
-    avatarScene.add(pointLight);
+    const headGeo = new THREE.BoxGeometry(0.6, 0.6, 0.6);
+    const headMat = new THREE.MeshLambertMaterial({ color: 0xffcc00 });
+    headMesh = new THREE.Mesh(headGeo, headMat);
+    headMesh.position.y = 1.1;
 
-    // Build blocky avatar
-    const headGeom = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-    const torsoGeom = new THREE.BoxGeometry(1, 1.4, 0.6);
-    const limbGeom = new THREE.BoxGeometry(0.4, 1.2, 0.4);
+    // --- ADD THE AVATAR FACE TO THE HEAD (2.9 Improvement) ---
+    const faceMat = new THREE.MeshBasicMaterial({ color: 0x333333, side: THREE.DoubleSide });
+    
+    // Smile Geometry
+    const smileGeom = new THREE.RingGeometry(0.08, 0.12, 16, 1, Math.PI, Math.PI);
+    const smile = new THREE.Mesh(smileGeom, faceMat);
+    smile.position.set(0, -0.08, 0.31); 
+    headMesh.add(smile);
 
-    avatarParts.head = new THREE.Mesh(headGeom, new THREE.MeshStandardMaterial({ color: 0xffcc00 }));
-    avatarParts.head.position.y = 1.3;
+    // Eye Geometry
+    const eyeGeom = new THREE.BoxGeometry(0.08, 0.08, 0.02);
+    const leftEye = new THREE.Mesh(eyeGeom, faceMat);
+    leftEye.position.set(-0.12, 0.1, 0.31);
+    headMesh.add(leftEye);
 
-    avatarParts.torso = new THREE.Mesh(torsoGeom, new THREE.MeshStandardMaterial({ color: 0x1e60ff }));
-    avatarParts.torso.position.y = 0.2;
+    const rightEye = new THREE.Mesh(eyeGeom, faceMat);
+    rightEye.position.set(0.12, 0.1, 0.31);
+    headMesh.add(rightEye);
 
-    avatarParts.leftArm = new THREE.Mesh(limbGeom, new THREE.MeshStandardMaterial({ color: 0xffcc00 }));
-    avatarParts.leftArm.position.set(-0.75, 0.3, 0);
+    characterGroup.add(headMesh);
 
-    avatarParts.rightArm = new THREE.Mesh(limbGeom, new THREE.MeshStandardMaterial({ color: 0xffcc00 }));
-    avatarParts.rightArm.position.set(0.75, 0.3, 0);
+    const torsoGeo = new THREE.BoxGeometry(0.8, 1.0, 0.4);
+    const torsoMat = new THREE.MeshLambertMaterial({ color: 0x1e60ff });
+    torsoMesh = new THREE.Mesh(torsoGeo, torsoMat);
+    torsoMesh.position.y = 0.3;
+    characterGroup.add(torsoMesh);
 
-    avatarParts.leftLeg = new THREE.Mesh(limbGeom, new THREE.MeshStandardMaterial({ color: 0x00ebd4 }));
-    avatarParts.leftLeg.position.set(-0.3, -1, 0);
+    const armGeo = new THREE.BoxGeometry(0.35, 1.0, 0.35);
+    const armMat = new THREE.MeshLambertMaterial({ color: 0xffcc00 });
 
-    avatarParts.rightLeg = new THREE.Mesh(limbGeom, new THREE.MeshStandardMaterial({ color: 0x00ebd4 }));
-    avatarParts.rightLeg.position.set(0.3, -1, 0);
+    leftArmMesh = new THREE.Mesh(armGeo, armMat);
+    leftArmMesh.position.set(-0.6, 0.3, 0);
+    characterGroup.add(leftArmMesh);
 
-    Object.values(avatarParts).forEach(part => avatarScene.add(part));
+    rightArmMesh = new THREE.Mesh(armGeo, armMat);
+    rightArmMesh.position.set(0.6, 0.3, 0);
+    characterGroup.add(rightArmMesh);
 
-    function animateAvatar() {
-        requestAnimationFrame(animateAvatar);
-        Object.values(avatarParts).forEach(part => {
-            part.rotation.y += 0.01;
-        });
-        avatarRenderer.render(avatarScene, avatarCamera);
+    const legGeo = new THREE.BoxGeometry(0.35, 1.0, 0.35);
+    const legMat = new THREE.MeshLambertMaterial({ color: 0x00ebd4 });
+
+    leftLegMesh = new THREE.Mesh(legGeo, legMat);
+    leftLegMesh.position.set(-0.2, -0.7, 0);
+    characterGroup.add(leftLegMesh);
+
+    rightLegMesh = new THREE.Mesh(legGeo, legMat);
+    rightLegMesh.position.set(0.2, -0.7, 0);
+    characterGroup.add(rightLegMesh);
+
+    scene.add(characterGroup);
+
+    function animate() {
+        requestAnimationFrame(animate);
+        // Clean rotation on the entire character group
+        characterGroup.rotation.y += 0.008;
+        renderer.render(scene, camera);
     }
-    animateAvatar();
+    animate();
+}
+
+// --- Dynamic Color Moderation Rules ---
+const RESTRICTED_COLORS = {
+    white: ["#ffffff", "#f0f0f0", "#e6e6e6"],
+    red: ["#ff0000", "#e60000", "#cc0000"],
+    blue: ["#0000ff", "#0000e6", "#0000cc"]
+};
+
+function moderateCharacterColors(head, torso, leftArm, rightArm, leftLeg, rightLeg) {
+    const cHead = head.toLowerCase();
+    const cTorso = torso.toLowerCase();
+    const cLeftArm = leftArm.toLowerCase();
+    const cRightArm = rightArm.toLowerCase();
+    const cLeftLeg = leftLeg.toLowerCase();
+    const cRightLeg = rightLeg.toLowerCase();
+
+    let safeTorso = cTorso;
+    let moderated = false;
+
+    for (const colorGroup in RESTRICTED_COLORS) {
+        const restrictedList = RESTRICTED_COLORS[colorGroup];
+        if (
+            restrictedList.includes(cHead) && 
+            restrictedList.includes(cTorso) && 
+            restrictedList.includes(cLeftArm) &&
+            restrictedList.includes(cRightArm) &&
+            restrictedList.includes(cLeftLeg) &&
+            restrictedList.includes(cRightLeg)
+        ) {
+            safeTorso = "#1e293b"; 
+            moderated = true;
+            break;
+        }
+    }
+
+    return {
+        head: cHead,
+        torso: safeTorso,
+        leftArm: cLeftArm,
+        rightArm: cRightArm,
+        leftLeg: cLeftLeg,
+        rightLeg: cRightLeg,
+        wasModerated: moderated
+    };
 }
 
 function updateAvatarColors() {
-    const head = document.getElementById("colorHead").value;
-    const torso = document.getElementById("colorTorso").value;
-    const leftArm = document.getElementById("colorLeftArm").value;
-    const rightArm = document.getElementById("colorRightArm").value;
-    const leftLeg = document.getElementById("colorLeftLeg").value;
-    const rightLeg = document.getElementById("colorRightLeg").value;
+    const rawHead = document.getElementById("colorHead").value;
+    const rawTorso = document.getElementById("colorTorso").value;
+    const rawLeftArm = document.getElementById("colorLeftArm").value;
+    const rawRightArm = document.getElementById("colorRightArm").value;
+    const rawLeftLeg = document.getElementById("colorLeftLeg").value;
+    const rawRightLeg = document.getElementById("colorRightLeg").value;
 
-    if (avatarParts.head) avatarParts.head.material.color.set(head);
-    if (avatarParts.torso) avatarParts.torso.material.color.set(torso);
-    if (avatarParts.leftArm) avatarParts.leftArm.material.color.set(leftArm);
-    if (avatarParts.rightArm) avatarParts.rightArm.material.color.set(rightArm);
-    if (avatarParts.leftLeg) avatarParts.leftLeg.material.color.set(leftLeg);
-    if (avatarParts.rightLeg) avatarParts.rightLeg.material.color.set(rightLeg);
+    const validated = moderateCharacterColors(rawHead, rawTorso, rawLeftArm, rawRightArm, rawLeftLeg, rawRightLeg);
 
-    const account = JSON.parse(localStorage.getItem("azoraAccount"));
-    if (account) {
-        account.avatar = { head, torso, leftArm, rightArm, leftLeg, rightLeg };
-        localStorage.setItem("azoraAccount", JSON.stringify(account));
+    headMesh.material.color.set(validated.head);
+    torsoMesh.material.color.set(validated.torso);
+    leftArmMesh.material.color.set(validated.leftArm);
+    rightArmMesh.material.color.set(validated.rightArm);
+    leftLegMesh.material.color.set(validated.leftLeg);
+    rightLegMesh.material.color.set(validated.rightLeg);
+
+    const warning = document.getElementById("modWarning");
+    if (validated.wasModerated) {
+        warning.style.display = "block";
+    } else {
+        warning.style.display = "none";
     }
 }
 
-// --- Page Setup ---
+function saveAvatar() {
+    const account = JSON.parse(localStorage.getItem("azoraAccount"));
+    if (!account) {
+        alert("Please log in or create an account to save your custom 3D avatar!");
+        return;
+    }
+
+    const validated = moderateCharacterColors(
+        document.getElementById("colorHead").value,
+        document.getElementById("colorTorso").value,
+        document.getElementById("colorLeftArm").value,
+        document.getElementById("colorRightArm").value,
+        document.getElementById("colorLeftLeg").value,
+        document.getElementById("colorRightLeg").value
+    );
+
+    account.avatar = {
+        head: validated.head,
+        torso: validated.torso,
+        leftArm: validated.leftArm,
+        rightArm: validated.rightArm,
+        leftLeg: validated.leftLeg,
+        rightLeg: validated.rightLeg,
+        face: "default"
+    };
+
+    localStorage.setItem("azoraAccount", JSON.stringify(account));
+    alert("3D Avatar saved successfully to your Azora account!");
+}
+
+// --- App Start ---
 window.addEventListener("DOMContentLoaded", () => {
+    init3DAvatar();
+    
     const loggedIn = localStorage.getItem("loggedIn");
     if (loggedIn === "true") {
         const account = JSON.parse(localStorage.getItem("azoraAccount"));
         if (account) {
-            document.getElementById("userPanel").style.display = "block";
+            document.getElementById("guestButtons").style.display = "none";
+            document.getElementById("userPanel").style.display = "flex";
             document.getElementById("profileButton").innerHTML = "👤 " + account.username;
             
-            checkDailyBonus(account);
-            updateWalletUI();
-            initAvatarCanvas();
-
             if (account.avatar) {
                 document.getElementById("colorHead").value = account.avatar.head || "#ffcc00";
                 document.getElementById("colorTorso").value = account.avatar.torso || "#1e60ff";
@@ -523,49 +512,185 @@ window.addEventListener("DOMContentLoaded", () => {
                 document.getElementById("colorRightArm").value = account.avatar.rightArm || "#ffcc00";
                 document.getElementById("colorLeftLeg").value = account.avatar.leftLeg || "#00ebd4";
                 document.getElementById("colorRightLeg").value = account.avatar.rightLeg || "#00ebd4";
-                setTimeout(updateAvatarColors, 100);
+                updateAvatarColors();
             }
         }
     }
-    renderMarketplace();
     
     const charServiceEnabled = localStorage.getItem("charServiceEnabled");
     if (charServiceEnabled === "true" && document.getElementById("charServiceToggle")) {
         document.getElementById("charServiceToggle").checked = true;
     }
 });
-// --- Pop-up Panel Controls ---
+// --- Bot Rename & Sign-Up Block System ---
 
-function toggleMarketplaceSection() {
-    const overlay = document.getElementById("marketPopupOverlay");
-    const marketPanel = document.getElementById("marketplacePanel");
-    const subsPanel = document.getElementById("subscriptionsPanel");
-
-    // Show the overlay and the marketplace panel, hide the subscription panel
-    overlay.style.display = "flex";
-    marketPanel.style.display = "block";
-    subsPanel.style.display = "none";
-}
-
-function toggleSubscriptionsSection() {
-    const overlay = document.getElementById("marketPopupOverlay");
-    const marketPanel = document.getElementById("marketplacePanel");
-    const subsPanel = document.getElementById("subscriptionsPanel");
-
-    // Show the overlay and the subscription panel, hide the marketplace panel
-    overlay.style.display = "flex";
-    marketPanel.style.display = "none";
-    subsPanel.style.display = "block";
-}
-
-function closeAllMarketPanels() {
-    document.getElementById("marketPopupOverlay").style.display = "none";
-}
-
-// Close the panel if the user clicks the dark background space
-function closeMarketPopup(event) {
-    const overlay = document.getElementById("marketPopupOverlay");
-    if (event.target === overlay) {
-        closeAllMarketPanels();
+function renameCompanionBot() {
+    const newNameInput = document.getElementById("botRenameInput");
+    if (!newNameInput) return;
+    
+    const newName = newNameInput.value.trim();
+    
+    if (!newName) {
+        alert("An error occurred. Please try again."); // Generic error
+        return;
     }
+    
+    // Check lengths and blocked words
+    if (newName.length < 2 || newName.length > 15 || isUsernameBlocked(newName)) {
+        alert("An unexpected system error occurred. Please try again later."); // Generic error so they can't bypass
+        return;
+    }
+    
+    botName = newName;
+    localStorage.setItem("customBotName", newName);
+    newNameInput.value = "";
+    
+    // Update displays across the site
+    updateBotUI();
+    if (typeof renderGlobalSearchResults === 'function') {
+        renderGlobalSearchResults();
+    }
+    alert(`✨ Companion bot successfully renamed to: ${newName}!`);
+}
+
+function updateBotUI() {
+    const botDisplayEls = document.querySelectorAll(".bot-name-display");
+    botDisplayEls.forEach(el => {
+        el.innerText = botName;
+    });
+}
+
+// Hook into register system to check blocked names silently
+function checkRegistrationUsername(username) {
+    if (isUsernameBlocked(username)) {
+        alert("An error occurred during account registration."); // Generic vague error
+        return false;
+    }
+    return true;
+}
+
+// Run on setup
+document.addEventListener("DOMContentLoaded", () => {
+    updateBotUI();
+});
+// --- 3D Avatar Guard System ---
+function updateAvatarLoginGuard() {
+    const loggedIn = localStorage.getItem("loggedIn") === "true";
+    const warningEl = document.getElementById("avatarLoggedOutWarning");
+    const avatarCanvasParent = document.getElementById("avatar3D"); // Target container of your 3D viewport
+
+    if (loggedIn) {
+        // User is logged in: Hide warning, show 3D Avatar
+        if (warningEl) warningEl.style.display = "none";
+        if (avatarCanvasParent) {
+            avatarCanvasParent.style.display = "block";
+            // Optional: Trigger your Three.js resize or render update if needed
+            if (typeof updateAvatarColors === 'function') {
+                updateAvatarColors();
+            }
+        }
+    } else {
+        // User is guest/logged out: Show warning, hide 3D Avatar
+        if (warningEl) warningEl.style.display = "flex";
+        if (avatarCanvasParent) avatarCanvasParent.style.display = "none";
+    }
+}
+// --- Settings Panel Category Switching ---
+function switchSettingsTab(tabName) {
+    const basicBtn = document.getElementById("btnBasicTab");
+    const customBtn = document.getElementById("btnCustomTab");
+    const basicSec = document.getElementById("settingsBasicSection");
+    const customSec = document.getElementById("settingsCustomSection");
+
+    if (tabName === 'basic') {
+        basicBtn.classList.add("active");
+        customBtn.classList.remove("active");
+        basicSec.style.display = "block";
+        customSec.style.display = "none";
+    } else {
+        customBtn.classList.add("active");
+        basicBtn.classList.remove("active");
+        customSec.style.display = "block";
+        basicSec.style.display = "none";
+    }
+}
+
+// --- Theme Application System ---
+function applyPresetTheme(type) {
+    // Disable custom overrides when preset is chosen
+    document.getElementById("customColorsToggle").checked = false;
+    toggleCustomColorPickers();
+
+    // Clean up premium classes
+    document.body.classList.remove("metallic-theme", "glossy-theme");
+
+    if (type === 'dark') {
+        document.documentElement.style.setProperty('--bg-gradient', 'linear-gradient(180deg, #05070c 0%, #080c14 50%, #020306 100%)');
+        document.documentElement.style.setProperty('--card-bg', 'rgba(8, 12, 20, 0.85)');
+        document.documentElement.style.setProperty('--accent-color', '#1e60ff');
+        document.documentElement.style.setProperty('--btn-gradient', 'linear-gradient(135deg, #1e60ff 0%, #00aaff 100%)');
+    } else if (type === 'light') {
+        // Theme elements inspired directly by the logo colors (White base + Cyan & Electric Blue accents)
+        document.documentElement.style.setProperty('--bg-gradient', 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)');
+        document.documentElement.style.setProperty('--card-bg', 'rgba(255, 255, 255, 0.85)');
+        document.documentElement.style.setProperty('--border-color', 'rgba(30, 96, 255, 0.15)');
+        document.documentElement.style.setProperty('--accent-color', '#00ebff');
+        document.documentElement.style.setProperty('--btn-gradient', 'linear-gradient(135deg, #00ebff 0%, #1e60ff 100%)');
+        // Let's adjust general dark text visibility overrides for light mode:
+        document.body.style.color = "#0f172a";
+    }
+    localStorage.setItem("selectedTheme", type);
+}
+
+// Custom Theme Controls Toggle
+function toggleCustomColorPickers() {
+    const isChecked = document.getElementById("customColorsToggle").checked;
+    const container = document.getElementById("customColorPickersContainer");
+    if (isChecked) {
+        container.style.display = "block";
+        applyCustomColors();
+    } else {
+        container.style.display = "none";
+        // Reset to standard properties
+        document.documentElement.style.removeProperty('--bg-gradient');
+        document.documentElement.style.removeProperty('--card-bg');
+        document.documentElement.style.removeProperty('--accent-color');
+    }
+}
+
+// Custom Theme Color Binding updates
+function applyCustomColors() {
+    const bg = document.getElementById("customBgColor").value;
+    const card = document.getElementById("customCardColor").value;
+    const accent = document.getElementById("customAccentColor").value;
+
+    document.documentElement.style.setProperty('--bg-gradient', bg);
+    document.documentElement.style.setProperty('--card-bg', card);
+    document.documentElement.style.setProperty('--accent-color', accent);
+    document.documentElement.style.setProperty('--btn-gradient', `linear-gradient(135deg, ${accent} 0%, #000000 150%)`);
+}
+
+// --- Premium System Guard ---
+function applyPremiumTheme(premiumType) {
+    // Basic verification check: Is the premium pass unlocked/active?
+    const hasPremium = localStorage.getItem("isPremium") === "true";
+
+    if (!hasPremium) {
+        alert("🔒 The " + premiumType.toUpperCase() + " material theme is part of the Premium Package! Acquire the Azora Members pass first.");
+        return;
+    }
+
+    // Disable custom overrides when preset is active
+    document.getElementById("customColorsToggle").checked = false;
+    toggleCustomColorPickers();
+
+    document.body.classList.remove("metallic-theme", "glossy-theme");
+
+    if (premiumType === 'metallic') {
+        document.body.classList.add("metallic-theme");
+    } else if (premiumType === 'glossy') {
+        document.body.classList.add("glossy-theme");
+    }
+    
+    alert("✨ Premium " + premiumType.toUpperCase() + " style successfully rendered!");
 }
