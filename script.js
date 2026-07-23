@@ -1,447 +1,485 @@
-// Global Client State Management Matrix
-let currentLoggedInUser = null;
-let balances = { coins: 100, diamonds: 0, cubes: 0 };
-let userCreatedGames = []; // Stores the database array of built games
+// Configuration - Adjust these to change speed and phrases
+const fallSpeed = 2; // Higher number = faster fall
+const rotationSpeed = 0.5; // Higher number = faster rotation
+const phrases = ["wow!", "this is cool!", "awesome!", "amazing!", "leemoon!"];
 
-// Mock database for checking existing local profiles
-function saveUserProfileToPlatform() {
-    if (!currentLoggedInUser) return;
-    
-    const profileData = {
-        balances: balances,
-        games: userCreatedGames
-    };
-    
-    // Save to browser database under the unique user handle key
-    localStorage.setItem(`azora_profile_${currentLoggedInUser.toLowerCase()}`, JSON.stringify(profileData));
-    console.log(`💾 Platform Sync: Data safely committed for player [${currentLoggedInUser}]`);
-}
+let fallingTextActive = true;
+let spawnInterval;
 
-function loadUserProfileFromPlatform(username) {
-    const backupData = localStorage.getItem(`azora_profile_${username.toLowerCase()}`);
-    
-    if (backupData) {
-        const parsed = JSON.parse(backupData);
-        balances = parsed.balances || { coins: 100, diamonds: 0, cubes: 0 };
-        userCreatedGames = parsed.games || [];
-        console.log(`🛸 Platform Matrix: Profile data successfully restored for [${username}] without loss.`);
-    } else {
-        // Fresh brand new user profile initialization parameters
-        balances = { coins: 100, diamonds: 0, cubes: 0 };
-        userCreatedGames = [];
-        console.log(`✨ Welcome! New platform save node instantiated for [${username}].`);
-    }
-    
-    refreshBalanceDisplay();
-}
-
-// Custom security verification matrix for input profiles
-const AZAFN_BLOCKED_KEYWORDS = ["hack", "exploit", "nuke", "bypass", "crash", "stolen"];
-
-let azaFnState = {
-    distributionSystem: null,
-    dimensionMode: null,
-    gameDescription: "",
-    saveSystemChoice: null
+// Mock database for search demonstration
+const database = {
+    users: [
+        { username: "603blox", profileLink: "https://www.roblox.com/users/9744531169/profile" },
+        { username: "AzoraDeveloper", profileLink: "#" },
+        { username: "LeemoonFan", profileLink: "#" },
+        { username: "Guest1337", profileLink: "#" }
+    ],
+    games: [
+        { title: "Super Azora Run", author: "603blox", link: "#" },
+        { title: "Avatar Customizer Tycoon", author: "AzoraDeveloper", link: "#" },
+        { title: "Sword Fighting Arena", author: "System", link: "#" }
+    ]
 };
 
-function toggleAzaFnPopup() {
-    const popup = document.getElementById("azafnPopup");
-    if (!popup) return;
+let currentSearchTab = "users";
 
-    if (popup.style.display === "none" || popup.style.display === "") {
-        popup.style.display = "flex";
-    } else {
-        popup.style.display = "none";
+// Create the container automatically
+const container = document.createElement('div');
+container.id = 'falling-text-container';
+document.body.appendChild(container);
+
+// Function to spawn a random word
+function spawnWord() {
+    if (!fallingTextActive) return;
+    const word = document.createElement('div');
+    word.className = 'falling-word';
+    word.innerText = phrases[Math.floor(Math.random() * phrases.length)];
+    
+    word.style.left = Math.random() * 90 + 'vw';
+    word.style.top = '-50px'; // Start just above the screen
+    
+    container.appendChild(word);
+    
+    let currentTop = -50;
+    let currentRotation = 0;
+    const rotationDirection = Math.random() > 0.5 ? 1 : -1; 
+
+    const interval = setInterval(() => {
+        currentTop += fallSpeed;
+        currentRotation += rotationSpeed * rotationDirection;
+        
+        word.style.top = currentTop + 'px';
+        word.style.transform = `rotate(${currentRotation}deg)`;
+        
+        if (currentTop > window.innerHeight) {
+            clearInterval(interval);
+            word.remove();
+        }
+    }, 20);
+}
+
+// Spawn a new word every 10.0 seconds
+function startFallingPhrases() {
+    if (spawnInterval) clearInterval(spawnInterval);
+    spawnInterval = setInterval(spawnWord, 10000);
+}
+startFallingPhrases();
+
+// --- Settings Logic ---
+function openSettings() {
+    document.getElementById("settingsOverlay").style.display = "flex";
+}
+function closeSettings() {
+    document.getElementById("settingsOverlay").style.display = "none";
+}
+function toggleFallingText() {
+    fallingTextActive = document.getElementById("fallingTextToggle").checked;
+    if (!fallingTextActive) {
+        container.innerHTML = ""; // instantly clear screen of phrases
     }
 }
-function pushChatMessage(sender, text) {
-    const stream = document.getElementById("azafnChatStream");
-    const msg = document.createElement("div");
-    msg.style.padding = "10px";
-    msg.style.borderRadius = "8px";
-    msg.style.maxWidth = "85%";
-    msg.style.fontSize = "14px";
-    msg.style.lineHeight = "1.4";
-    
-    if (sender === "ai") {
-        msg.style.background = "rgba(0, 191, 255, 0.15)";
-        msg.style.borderLeft = "3px solid #00bfff";
-        msg.style.alignSelf = "flex-start";
-        msg.innerHTML = `<strong>🤖 AzaFn-1.0:</strong> ${text}`;
-    } else {
-        msg.style.background = "rgba(255, 255, 255, 0.1)";
-        msg.style.borderRight = "3px solid #fff";
-        msg.style.alignSelf = "flex-end";
-        msg.innerHTML = `<strong>👤 You:</strong> ${text}`;
+function logoutUser() {
+    localStorage.removeItem("loggedIn");
+    localStorage.removeItem("azoraAccount");
+    alert("Logged out successfully.");
+    location.reload();
+}
+
+// --- Search Logic ---
+function openSearch() {
+    document.getElementById("searchOverlay").style.display = "flex";
+    document.getElementById("searchInput").focus();
+    performSearch();
+}
+function closeSearch() {
+    document.getElementById("searchOverlay").style.display = "none";
+}
+function setSearchTab(tab) {
+    currentSearchTab = tab;
+    document.getElementById("searchUsersTab").classList.toggle("active", tab === "users");
+    document.getElementById("searchGamesTab").classList.toggle("active", tab === "games");
+    document.getElementById("searchInput").placeholder = tab === "users" ? "Search usernames..." : "Search games...";
+    performSearch();
+}
+function performSearch() {
+    const query = document.getElementById("searchInput").value.trim().toLowerCase();
+    const resultsContainer = document.getElementById("searchResultsContainer");
+    resultsContainer.innerHTML = "";
+
+    // Load custom dynamic profiles from local storage to include newly made accounts in user searches!
+    let localUsers = [];
+    const localAcc = localStorage.getItem("azoraAccount");
+    if (localAcc) {
+        try {
+            const parsed = JSON.parse(localAcc);
+            localUsers.push({ username: parsed.username, profileLink: "#" });
+        } catch (e) {}
     }
-    
-    stream.appendChild(msg);
-    stream.scrollTop = stream.scrollHeight;
-}
 
-function bootAzaFnSystem() {
-    pushChatMessage("ai", "Connection established. I am ready to construct your project module. Select your target distribution format:");
-    
-    const interactiveArea = document.getElementById("azafnInteractions");
-    interactiveArea.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-            <button onclick="handleSystemSelect('norm', 'Norm Game System')" style="text-align:left; padding:10px; background:#070a12; color:#fff; border:1px solid #00bfff; cursor:pointer; border-radius:6px;">🎯 Norm Game System (Standard Grid Layout)</button>
-            <button onclick="handleSystemSelect('quick', 'Quick Games Feed')" style="text-align:left; padding:10px; background:#070a12; color:#fff; border:1px solid #00ebd4; cursor:pointer; border-radius:6px;">🚀 Quick Games Feed (Vertical TikTok Scroll Engine)</button>
-        </div>
-    `;
-}
+    const allUsers = [...database.users, ...localUsers];
+    // Remove duplicates from demo array
+    const uniqueUsers = Array.from(new Map(allUsers.map(item => [item.username.toLowerCase(), item])).values());
 
-function handleSystemSelect(sysType, printableName) {
-    azaFnState.distributionSystem = sysType;
-    pushChatMessage("user", `I want to create a game using the ${printableName}.`);
-    
-    document.getElementById("azafnInteractions").innerHTML = "";
-    document.getElementById("azafnInputContainer").style.display = "flex";
-    
-    setTimeout(() => {
-        pushChatMessage("ai", "Understood! Type out what your game looks like, its core loops, or tell me to generate asset images:");
-    }, 500);
-}
+    let results = [];
+    if (currentSearchTab === "users") {
+        results = uniqueUsers.filter(u => u.username.toLowerCase().includes(query));
+    } else {
+        results = database.games.filter(g => g.title.toLowerCase().includes(query) || g.author.toLowerCase().includes(query));
+    }
 
-function processUserTextPrompt() {
-    const inputField = document.getElementById("azafnUserPrompt");
-    const userText = inputField.value.trim();
-    if (!userText) return;
-    
-    pushChatMessage("user", userText);
-    inputField.value = ""; 
-    
-    // Safety Shield Check
-    const cleanCheckText = userText.toLowerCase();
-    let flaggedWord = "";
-    let containsViolations = AZAFN_BLOCKED_KEYWORDS.some(word => {
-        if (cleanCheckText.includes(word)) { flaggedWord = word; return true; }
-        return false;
+    if (results.length === 0) {
+        resultsContainer.innerHTML = "<div class='no-results'>No results found.</div>";
+        return;
+    }
+
+    results.forEach(item => {
+        const row = document.createElement("div");
+        row.className = "search-result-item";
+        if (currentSearchTab === "users") {
+            row.innerHTML = `👤 <strong>${item.username}</strong> <a href="${item.profileLink}" class="search-action-btn">View</a>`;
+        } else {
+            row.innerHTML = `🎮 <strong>${item.title}</strong> <span class="creator-by">by ${item.author}</span> <a href="${item.link}" class="search-action-btn">Play</a>`;
+        }
+        resultsContainer.appendChild(row);
     });
-    
-    if (containsViolations) {
-        const stream = document.getElementById("azafnChatStream");
-        const errorMsg = document.createElement("div");
-        errorMsg.style.padding = "10px";
-        errorMsg.style.borderRadius = "8px";
-        errorMsg.style.maxWidth = "85%";
-        errorMsg.style.background = "rgba(255, 59, 48, 0.15)";
-        errorMsg.style.borderLeft = "3px solid #ff3b30";
-        errorMsg.style.color = "#ff8080";
-        errorMsg.style.alignSelf = "flex-start";
-        errorMsg.style.fontSize = "14px";
-        errorMsg.innerHTML = `<strong>⚠️ AzaFn Shield Error:</strong> Generation request failed. Forbidden terminology detected ("${flaggedWord}"). Refinement needed for system creation.`;
-        
-        stream.appendChild(errorMsg);
-        stream.scrollTop = stream.scrollHeight;
-        return; 
+}
+
+// --- Dropdown Socials logic ---
+let lockedOpen = false;
+function toggleDropdown() {
+    const menu = document.getElementById("socialDropdown");
+    lockedOpen = !lockedOpen;
+    menu.style.display = lockedOpen ? "block" : "none";
+}
+
+const dropdown = document.querySelector(".dropdown");
+if (dropdown) {
+    dropdown.addEventListener("mouseenter", function () {
+        if (!lockedOpen) {
+            document.getElementById("socialDropdown").style.display = "block";
+        }
+    });
+
+    dropdown.addEventListener("mouseleave", function () {
+        if (!lockedOpen) {
+            document.getElementById("socialDropdown").style.display = "none";
+        }
+    });
+}
+
+// --- Account Popup Modal Logic ---
+function openCreateAccount() {
+    document.getElementById("accountOverlay").style.display = "flex";
+    document.getElementById("popupTitle").innerHTML = "Join Azora";
+    document.getElementById("popupSubtitle").style.display = "block";
+    document.getElementById("confirmPassword").style.display = "block";
+    document.getElementById("email").style.display = "block";
+    document.querySelectorAll("#accountOverlay .checkbox").forEach(el => el.style.display = "block");
+    document.getElementById("mainButton").innerHTML = "Create Account";
+    document.getElementById("switchMode").innerHTML = "Log In";
+    document.querySelector(".popup p").childNodes[0].textContent = "Already have an account? ";
+}
+
+function openLogin() {
+    document.getElementById("accountOverlay").style.display = "flex";
+    document.getElementById("popupTitle").innerHTML = "Welcome Back!";
+    document.getElementById("popupSubtitle").style.display = "none";
+    document.getElementById("confirmPassword").style.display = "none";
+    document.getElementById("email").style.display = "none";
+    document.querySelectorAll("#accountOverlay .checkbox").forEach(el => el.style.display = "none");
+    document.getElementById("mainButton").innerHTML = "Log In";
+    document.getElementById("switchMode").innerHTML = "Create Account";
+    document.querySelector(".popup p").childNodes[0].textContent = "Don't have an account? ";
+}
+
+function createAccount() {
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value;
+
+    if (!username || !password) {
+        alert("Please fill out all required fields!");
+        return;
     }
-    
-    azaFnState.gameDescription += " " + userText;
-    document.getElementById("azafnInputContainer").style.display = "none";
-    
-    // Image Asset Matrix Engine Execution
-    if (cleanCheckText.includes("image") || cleanCheckText.includes("picture") || cleanCheckText.includes("draw")) {
-        pushChatMessage("ai", "🎨 Generating safe dynamic image matrix components based on prompt parameters...");
-        
-        setTimeout(() => {
-            const stream = document.getElementById("azafnChatStream");
-            const imgContainer = document.createElement("div");
-            imgContainer.style.alignSelf = "flex-start";
-            imgContainer.style.margin = "8px 0";
-            imgContainer.style.border = "2px solid #00bfff";
-            imgContainer.style.borderRadius = "8px";
-            imgContainer.style.overflow = "hidden";
-            imgContainer.style.maxWidth = "85%";
-            
-            imgContainer.innerHTML = `
-                <div style="background:#00bfff; color:#000; padding:4px 8px; font-size:11px; font-weight:bold;">🤖 AzaFn Canvas Mesh Render</div>
-                <div style="width: 220px; height: 130px; background: linear-gradient(135deg, #111827, #1f2937); display:flex; justify-content:center; align-items:center; color:#888; font-style:italic; font-size:12px; padding:10px; text-align:center;">
-                    [2D/3D Concept Asset Geometry Array Compiled]
-                </div>
-            `;
-            stream.appendChild(imgContainer);
-            stream.scrollTop = stream.scrollHeight;
-            
-            evaluateDimensionParameters();
-        }, 1200);
+
+    // Default character customization template matching the 6-joint setup
+    const account = {
+        username: username,
+        password: password,
+        avatar: {
+            head: "#ffcc00",
+            torso: "#1e60ff",
+            leftArm: "#ffcc00",
+            rightArm: "#ffcc00",
+            leftLeg: "#00ebd4",
+            rightLeg: "#00ebd4",
+            face: "default"
+        }
+    };
+
+    localStorage.setItem("azoraAccount", JSON.stringify(account));
+    localStorage.setItem("loggedIn", "true");
+
+    alert("🎉 Welcome to Azora, " + username + "!");
+    location.reload(); 
+}
+
+// Attach main account modal button action
+document.getElementById("mainButton").addEventListener("click", function () {
+    if (this.innerHTML === "Create Account") {
+        createAccount();
     } else {
-        evaluateDimensionParameters();
+        const username = document.getElementById("username").value.trim();
+        if (username) {
+            localStorage.setItem("loggedIn", "true");
+            alert("✨ Welcome back, " + username + "!");
+            location.reload();
+        }
     }
-}
-
-function evaluateDimensionParameters() {
-    const fullConcept = azaFnState.gameDescription.toLowerCase();
-    const mentions2D = fullConcept.includes("2d") || fullConcept.includes("two dimensional");
-    const mentions3D = fullConcept.includes("3d") || fullConcept.includes("three dimensional");
-    
-    if (mentions2D && !mentions3D) {
-        azaFnState.dimensionMode = "2d";
-        pushChatMessage("ai", "Spatial layout matrix scanned: 2D viewports established.");
-        triggerSaveSystemAnalysis();
-    } else if (mentions3D && !mentions2D) {
-        azaFnState.dimensionMode = "3d";
-        pushChatMessage("ai", "Spatial layout matrix scanned: 3D depth meshes established.");
-        triggerSaveSystemAnalysis();
-    } else {
-        pushChatMessage("ai", "I've logged your game parameters! However, I can't determine whether it's 2D or 3D gameplay. Select your platform matrix mode:");
-        
-        const interactiveArea = document.getElementById("azafnInteractions");
-        interactiveArea.innerHTML = `
-            <div style="display: flex; gap: 8px;">
-                <button onclick="handleDimensionSelection('2d')" style="flex:1; padding:10px; background:#070a12; color:#fff; border:1px solid #ffd700; cursor:pointer; border-radius:6px;">🖼️ 2D Engine Mode</button>
-                <button onclick="handleDimensionSelection('3d')" style="flex:1; padding:10px; background:#070a12; color:#fff; border:1px solid #ffd700; cursor:pointer; border-radius:6px;">📦 3D Engine Mode</button>
-            </div>
-        `;
-    }
-}
-
-function handleDimensionSelection(dim) {
-    azaFnState.dimensionMode = dim;
-    pushChatMessage("user", `Set the framework engine constraints to ${dim.toUpperCase()}.`);
-    document.getElementById("azafnInteractions").innerHTML = "";
-    
-    setTimeout(() => { triggerSaveSystemAnalysis(); }, 500);
-}
-
-function triggerSaveSystemAnalysis() {
-    pushChatMessage("ai", "Would you like to have a Saving System inside your game? A Saving System on Azora automatically saves player progress inside and outside the game. When someone logs off, the engine securely handles data transfers for an extra 3 seconds on average before disconnecting.");
-    
-    const interactiveArea = document.getElementById("azafnInteractions");
-    interactiveArea.innerHTML = `
-        <div style="display: flex; gap: 8px;">
-            <button onclick="handleSaveFinalization(true)" style="flex:1; padding:10px; background:#1b4332; color:#fff; border:1px solid #4cd964; font-weight:bold; cursor:pointer; border-radius:6px;">💾 Ingest Save Protocol</button>
-            <button onclick="handleSaveFinalization(false)" style="flex:1; padding:10px; background:#4a1212; color:#fff; border:1px solid #ff3b30; cursor:pointer; border-radius:6px;">Skip System</button>
-        </div>
-    `;
-}
-
-function handleSaveFinalization(wantsSave) {
-    azaFnState.saveSystemChoice = wantsSave;
-    pushChatMessage("user", wantsSave ? "Confirming injection of the 3-second secure save module." : "Bypass data save integration modules.");
-    document.getElementById("azafnInteractions").innerHTML = "";
-    
-    if (currentLoggedInUser) {
-        userCreatedGames.push({
-            name: "AI Project Bundle #" + (userCreatedGames.length + 1),
-            type: azaFnState.distributionSystem,
-            dimensions: azaFnState.dimensionMode,
-            saveSystem: wantsSave
-        });
-        saveUserProfileToPlatform();
-    }
-    
-    setTimeout(() => {
-        pushChatMessage("ai", "Configuration locked! Click the builder compiler link below to begin designing workspace variables.");
-        document.getElementById("launchStudioBtn").style.display = "block";
-    }, 600);
-}
-
-// Taken usernames catalog for nice error notification verification
-const registeredUsernames = ["603blox", "leemoon", "azora", "system", "administrator"];
-
-// Clothing Inventory Uploaded by Official AI Account: "Azora"
-const aiClothingCatalog = [
-    { id: "c1", name: "Official Cyber Cloak", price: 25, type: "Shirt" },
-    { id: "c2", name: "AI Enforcement Matrix Boots", price: 40, type: "Pants" },
-    { id: "c3", name: "Moderator Oversight Cap", price: 15, type: "Hat" },
-    { id: "c4", name: "Azora Admin Neon Hoodie", price: 50, type: "Shirt" },
-    { id: "c5", name: "Quantum Security Trousers", price: 35, type: "Pants" }
-];
-
-document.addEventListener("DOMContentLoaded", () => {
-    initThreeJsAvatar();
-    refreshBalanceDisplay();
-    generateMarketItems();
 });
 
-// --- Three.js Avatar Initialization Routine ---
-let scene, camera, renderer, avatarCube;
-function initThreeJsAvatar() {
-    const container = document.getElementById("avatar-container");
-    if (!container) return;
+// Switch Mode Toggle link inside the popup
+document.getElementById("switchMode").addEventListener("click", function (e) {
+    e.preventDefault();
+    if (this.innerHTML === "Log In") {
+        openLogin();
+    } else {
+        openCreateAccount();
+    }
+});
 
-    container.innerHTML = "";
+// Close popups when clicking outside the box
+document.querySelectorAll(".overlay").forEach(overlay => {
+    overlay.addEventListener("click", function (e) {
+        if (e.target === this) {
+            this.style.display = "none";
+        }
+    });
+});
+
+// --- Creator site handling ---
+function handleCreateClick() {
+    const loggedIn = localStorage.getItem("loggedIn");
+    if (loggedIn === "true") {
+        window.open("creator.html", "_blank");
+    } else {
+        alert("Please sign up first to access the Creator Studio!");
+        openCreateAccount();
+    }
+}
+
+// --- BasicCharacterService toggle ---
+function toggleCharacterService() {
+    const isChecked = document.getElementById("charServiceToggle").checked;
+    localStorage.setItem("charServiceEnabled", isChecked);
+    alert(`BasicCharacterService is now ${isChecked ? "ENABLED" : "DISABLED"}!`);
+}
+
+// --- TOS Modal Toggle Logic ---
+function openTOS(event) {
+    event.preventDefault();
+    document.getElementById("tosOverlay").style.display = "flex";
+}
+
+function closeTOS() {
+    document.getElementById("tosOverlay").style.display = "none";
+}
+
+// --- 3D Avatar Global Variables ---
+let scene, camera, renderer;
+let headMesh, torsoMesh, leftArmMesh, rightArmMesh, leftLegMesh, rightLegMesh;
+
+function init3DAvatar() {
+    const container = document.getElementById("avatar3d-canvas");
+    if (!container) return;
 
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
-    camera.position.set(0, 0, 5);
+    camera.position.set(0, 1.3, 4.2);
 
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
     container.appendChild(renderer.domElement);
 
-    const geometry = new THREE.BoxGeometry(1.5, 2, 0.8);
-    const material = new THREE.MeshStandardMaterial({ color: 0x00bfff, roughness: 0.4, metalness: 0.2 });
-    avatarCube = new THREE.Mesh(geometry, material);
-    scene.add(avatarCube);
-
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
     scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    directionalLight.position.set(5, 10, 7);
+    scene.add(directionalLight);
 
-    const dirLight = new THREE.DirectionLight(0xffffff, 0.8);
-    dirLight.position.set(5, 5, 5);
-    scene.add(dirLight);
+    const characterGroup = new THREE.Group();
 
-    animateThreeJsViewport();
-}
+    const headGeo = new THREE.BoxGeometry(0.6, 0.6, 0.6);
+    const headMat = new THREE.MeshLambertMaterial({ color: 0xffcc00 });
+    headMesh = new THREE.Mesh(headGeo, headMat);
+    headMesh.position.y = 1.1;
+    characterGroup.add(headMesh);
 
-function animateThreeJsViewport() {
-    requestAnimationFrame(animateThreeJsViewport);
-    if (avatarCube) {
-        avatarCube.rotation.y += 0.01;
-    }
-    if (renderer && scene && camera) {
+    const torsoGeo = new THREE.BoxGeometry(0.8, 1.0, 0.4);
+    const torsoMat = new THREE.MeshLambertMaterial({ color: 0x1e60ff });
+    torsoMesh = new THREE.Mesh(torsoGeo, torsoMat);
+    torsoMesh.position.y = 0.3;
+    characterGroup.add(torsoMesh);
+
+    const armGeo = new THREE.BoxGeometry(0.35, 1.0, 0.35);
+    const armMat = new THREE.MeshLambertMaterial({ color: 0xffcc00 });
+
+    leftArmMesh = new THREE.Mesh(armGeo, armMat);
+    leftArmMesh.position.set(-0.6, 0.3, 0);
+    characterGroup.add(leftArmMesh);
+
+    rightArmMesh = new THREE.Mesh(armGeo, armMat);
+    rightArmMesh.position.set(0.6, 0.3, 0);
+    characterGroup.add(rightArmMesh);
+
+    const legGeo = new THREE.BoxGeometry(0.35, 1.0, 0.35);
+    const legMat = new THREE.MeshLambertMaterial({ color: 0x00ebd4 });
+
+    leftLegMesh = new THREE.Mesh(legGeo, legMat);
+    leftLegMesh.position.set(-0.2, -0.7, 0);
+    characterGroup.add(leftLegMesh);
+
+    rightLegMesh = new THREE.Mesh(legGeo, legMat);
+    rightLegMesh.position.set(0.2, -0.7, 0);
+    characterGroup.add(rightLegMesh);
+
+    scene.add(characterGroup);
+
+    function animate() {
+        requestAnimationFrame(animate);
+        characterGroup.rotation.y += 0.008;
         renderer.render(scene, camera);
     }
+    animate();
 }
 
-window.addEventListener("resize", () => {
-    const container = document.getElementById("avatar-container");
-    if (!container || !camera || !renderer) return;
-    camera.aspect = container.clientWidth / container.clientHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(container.clientWidth, container.clientHeight);
-});
-
-// --- Authentication Overlay Form Handlers ---
-let authMode = "create";
-function openAuthModal(mode) {
-    authMode = mode;
-    document.getElementById("accountOverlay").style.display = "flex";
-    
-    const title = document.getElementById("popupTitle");
-    const sub = document.getElementById("popupSubtitle");
-    const btn = document.getElementById("authSubmitBtn");
-    
-    if (mode === "create") {
-        title.innerText = "Join Azora Platform";
-        sub.innerText = "Create a custom node key entry to initialize network identity arrays.";
-        btn.innerText = "Instantiate Account";
-    } else {
-        title.innerText = "Log In to Account";
-        sub.innerText = "Provide valid credentials to hook current configuration settings.";
-        btn.innerText = "Establish Login";
-    }
-}
-
-function closeAccountModal() {
-    document.getElementById("accountOverlay").style.display = "none";
-    document.getElementById("username").value = "";
-    document.getElementById("password").value = "";
-}
-
-function handleAuthSubmission() {
-    const userVal = document.getElementById("username").value.trim();
-    const passVal = document.getElementById("password").value;
-
-    if (!userVal || !passVal) {
-        alert("Form processing exception: Username and password entries cannot remain vacant.");
-        return;
-    }
-
-    if (authMode === "create") {
-        if (registeredUsernames.includes(userVal.toLowerCase())) {
-            alert(`⚠️ Core Security Intercept: The identity index "${userVal}" is already registered in our production table.`);
-            return;
-        }
-        currentLoggedInUser = userVal;
-        alert(`✨ Profile Node successfully generated: Welcome to Azora, ${userVal}!`);
-    } else {
-        currentLoggedInUser = userVal;
-        alert(`🔑 Access Granted: Welcome back, ${userVal}. Configuration profiles successfully mounted.`);
-    }
-
-    closeAccountModal();
-    document.getElementById("guestButtons").style.display = "none";
-    document.getElementById("userPanel").style.display = "block";
-    
-    loadUserProfileFromPlatform(currentLoggedInUser);
-}
-
-function logoutUser() {
-    alert(`🔌 Session Termination: Securely disconnecting profile context for [${currentLoggedInUser}].`);
-    currentLoggedInUser = null;
-    balances = { coins: 100, diamonds: 0, cubes: 0 };
-    userCreatedGames = [];
-    
-    document.getElementById("userPanel").style.display = "none";
-    document.getElementById("guestButtons").style.display = "block";
-    
-    refreshBalanceDisplay();
-}
-
-// --- Platform Asset Conversion Exchanges ---
-function openConvertModal() {
-    document.getElementById("convertOverlay").style.display = "flex";
-}
-
-function closeConvertModal() {
-    document.getElementById("convertOverlay").style.display = "none";
-    document.getElementById("convertAmount").value = "";
-}
-
-function processAssetConversion() {
-    const amt = parseInt(document.getElementById("convertAmount").value);
-    if (isNaN(amt) || amt <= 0) {
-        alert("Conversion logic error: Input variable evaluation requires a valid integer integer count.");
-        return;
-    }
-
-    if (balances.coins < amt) {
-        alert("Transaction failed: Insufficient standard resource balances to process balance conversion arrays.");
-        return;
-    }
-
-    balances.coins -= amt;
-    const gainedDiamonds = Math.floor(amt / 10);
-    balances.diamonds += gainedDiamonds;
-
-    alert(`💱 Matrix Swap Complete: Converted ${amt} AzoraCoins into ${gainedDiamonds} high-tier AzoraDiamonds.`);
-    saveUserProfileToPlatform();
-    refreshBalanceDisplay();
-    closeConvertModal();
-}
-
-// --- Storefront Interface Generators ---
-function generateMarketItems() {
-    const grid = document.getElementById("marketGrid");
-    if (!grid) return;
-    grid.innerHTML = "";
-
-    aiClothingCatalog.forEach(item => {
-        const itemBox = document.createElement("div");
-        itemBox.className = "market-item";
-        itemBox.innerHTML = `
-            <h4>${item.name}</h4>
-            <div class="market-author">Uploaded by: Azora AI 🤖</div>
-            <p style="font-size:12px; margin:5px 0;">🏷️ Type: ${item.type}</p>
-            <button style="font-size:11px; padding:4px 8px;" onclick="buyMarketItem('${item.name}', ${item.price})">🪙 ${item.price}</button>
-        `;
-        grid.appendChild(itemBox);
-    });
-}
-
-function buyMarketItem(name, price) {
-    if (!currentLoggedInUser) { alert("Please log in first."); return; }
-    if (balances.coins < price) { alert("Insufficient AzoraCoins."); return; }
-    balances.coins -= price;
-    refreshBalanceDisplay();
-    saveUserProfileToPlatform();
-    alert(`🛍️ Successfully acquired "${name}" from official AI account "Azora"! Asset added to wardrobe matrix.`);
-}
-
-function refreshBalanceDisplay() {
-    document.getElementById("displayCoins").innerText = balances.coins;
-    document.getElementById("displayDiamonds").innerText = balances.diamonds;
-    document.getElementById("displayCubes").innerText = balances.cubes;
-}
-
-// --- Hook for external System Appeals Interface Integration ---
-window.submitAppealHook = function(username, text) {
-    console.log("Transmission redirected to target system channel...");
-    setTimeout(() => {
-        alert(`📨 [System Account Auto-Response]: Hello ${username},\n\nYour ban/termination appeal context has been fully analyzed by the automated internal System ledger pipeline.\n\nVerdict Status: [ACCEPTED]. Your core permissions have been fully reinstated. Please adhere closely to safety catalog guidelines going forward.`);
-    }, 1500);
+// --- Dynamic Color Moderation Rules ---
+const RESTRICTED_COLORS = {
+    white: ["#ffffff", "#f0f0f0", "#e6e6e6"],
+    red: ["#ff0000", "#e60000", "#cc0000"],
+    blue: ["#0000ff", "#0000e6", "#0000cc"]
 };
+
+function moderateCharacterColors(head, torso, leftArm, rightArm, leftLeg, rightLeg) {
+    const cHead = head.toLowerCase();
+    const cTorso = torso.toLowerCase();
+    const cLeftArm = leftArm.toLowerCase();
+    const cRightArm = rightArm.toLowerCase();
+    const cLeftLeg = leftLeg.toLowerCase();
+    const cRightLeg = rightLeg.toLowerCase();
+
+    let safeTorso = cTorso;
+    let moderated = false;
+
+    for (const colorGroup in RESTRICTED_COLORS) {
+        const restrictedList = RESTRICTED_COLORS[colorGroup];
+        if (
+            restrictedList.includes(cHead) && 
+            restrictedList.includes(cTorso) && 
+            restrictedList.includes(cLeftArm) &&
+            restrictedList.includes(cRightArm) &&
+            restrictedList.includes(cLeftLeg) &&
+            restrictedList.includes(cRightLeg)
+        ) {
+            safeTorso = "#1e293b"; 
+            moderated = true;
+            break;
+        }
+    }
+
+    return {
+        head: cHead,
+        torso: safeTorso,
+        leftArm: cLeftArm,
+        rightArm: cRightArm,
+        leftLeg: cLeftLeg,
+        rightLeg: cRightLeg,
+        wasModerated: moderated
+    };
+}
+
+function updateAvatarColors() {
+    const rawHead = document.getElementById("colorHead").value;
+    const rawTorso = document.getElementById("colorTorso").value;
+    const rawLeftArm = document.getElementById("colorLeftArm").value;
+    const rawRightArm = document.getElementById("colorRightArm").value;
+    const rawLeftLeg = document.getElementById("colorLeftLeg").value;
+    const rawRightLeg = document.getElementById("colorRightLeg").value;
+
+    const validated = moderateCharacterColors(rawHead, rawTorso, rawLeftArm, rawRightArm, rawLeftLeg, rawRightLeg);
+
+    headMesh.material.color.set(validated.head);
+    torsoMesh.material.color.set(validated.torso);
+    leftArmMesh.material.color.set(validated.leftArm);
+    rightArmMesh.material.color.set(validated.rightArm);
+    leftLegMesh.material.color.set(validated.leftLeg);
+    rightLegMesh.material.color.set(validated.rightLeg);
+
+    const warning = document.getElementById("modWarning");
+    if (validated.wasModerated) {
+        warning.style.display = "block";
+    } else {
+        warning.style.display = "none";
+    }
+}
+
+function saveAvatar() {
+    const account = JSON.parse(localStorage.getItem("azoraAccount"));
+    if (!account) {
+        alert("Please log in or create an account to save your custom 3D avatar!");
+        return;
+    }
+
+    const validated = moderateCharacterColors(
+        document.getElementById("colorHead").value,
+        document.getElementById("colorTorso").value,
+        document.getElementById("colorLeftArm").value,
+        document.getElementById("colorRightArm").value,
+        document.getElementById("colorLeftLeg").value,
+        document.getElementById("colorRightLeg").value
+    );
+
+    account.avatar = {
+        head: validated.head,
+        torso: validated.torso,
+        leftArm: validated.leftArm,
+        rightArm: validated.rightArm,
+        leftLeg: validated.leftLeg,
+        rightLeg: validated.rightLeg,
+        face: "default"
+    };
+
+    localStorage.setItem("azoraAccount", JSON.stringify(account));
+    alert("3D Avatar saved successfully to your Azora account!");
+}
+
+// --- App Start ---
+window.addEventListener("DOMContentLoaded", () => {
+    init3DAvatar();
+    
+    // Check if user logged in & load state
+    const loggedIn = localStorage.getItem("loggedIn");
+    if (loggedIn === "true") {
+        const account = JSON.parse(localStorage.getItem("azoraAccount"));
+        if (account) {
+            document.getElementById("guestButtons").style.display = "none";
+            document.getElementById("userPanel").style.display = "flex";
+            document.getElementById("profileButton").innerHTML = "👤 " + account.username;
+            
+            if (account.avatar) {
+                document.getElementById("colorHead").value = account.avatar.head || "#ffcc00";
+                document.getElementById("colorTorso").value = account.avatar.torso || "#1e60ff";
+                document.getElementById("colorLeftArm").value = account.avatar.leftArm || "#ffcc00";
+                document.getElementById("colorRightArm").value = account.avatar.rightArm || "#ffcc00";
+                document.getElementById("colorLeftLeg").value = account.avatar.leftLeg || "#00ebd4";
+                document.getElementById("colorRightLeg").value = account.avatar.rightLeg || "#00ebd4";
+                updateAvatarColors();
+            }
+        }
+    }
+    
+    // Load character service switch setting state
+    const charServiceEnabled = localStorage.getItem("charServiceEnabled");
+    if (charServiceEnabled === "true" && document.getElementById("charServiceToggle")) {
+        document.getElementById("charServiceToggle").checked = true;
+    }
+});

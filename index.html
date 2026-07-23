@@ -5,105 +5,231 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Azora.HaveFun</title>
     <link rel="stylesheet" href="style.css">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
+
 <body>
-
-<div id="announcement-banner">
-    <h2>📢 Today's Announcement!</h2>
-    <p>Welcome to Azora! Build games. Customize avatars. Have fun!</p>
-</div>
-
-<div id="creation-date">
-    Creation Date: June 26, 2026
-</div>
-<div id="falling-text-container"></div>
 
 <div id="accountOverlay" class="overlay" style="display:none;">
     <div class="popup">
-        <span class="close-btn" onclick="closeAccountModal()">&times;</span>
         <img src="logo.jpg" class="popupLogo" alt="Azora Logo">
         <h1 id="popupTitle">Join Azora</h1>
-        <p id="popupSubtitle">Build games. Customize avatars. Have fun.</p>
+        <p id="popupSubtitle">
+            Build games.<br>
+            Customize avatars.<br>
+            Have fun.
+        </p>
+
         <input id="username" type="text" placeholder="Username">
         <input id="password" type="password" placeholder="Password">
-        <button id="authSubmitBtn" onclick="handleAuthSubmission()">Instantiate Account</button>
+        <input id="confirmPassword" type="password" placeholder="Confirm Password">
+        <input id="email" type="email" placeholder="Email (Optional)">
+
+        <label class="checkbox">
+          <input type="checkbox" id="tosCheckbox">
+          I agree to the <a href="#" onclick="openTOS(event)" style="color: #1e60ff; text-decoration: underline;">Terms of Service</a>
+        </label>
+
+        <label class="checkbox">
+            <input type="checkbox"> I agree to follow the Community Rules
+        </label>
+
+        <button id="mainButton">Create Account</button>
+
+        <p>
+            Already have an account? 
+            <a href="#" id="switchMode">Log In</a>
+        </p>
     </div>
 </div>
 
-<div id="convertOverlay" class="overlay" style="display:none;">
-    <div class="popup">
-        <span class="close-btn" onclick="closeConvertModal()">&times;</span>
-        <h2>💱 Resource Exchange Matrix</h2>
-        <p>Convert your hard-earned AzoraCoins into premium AzoraDiamonds.</p>
-        <p style="font-size:12px; color:#ffd700;">Rate Matrix: 10 Coins ➔ 1 Diamond</p>
-        <input id="convertAmount" type="number" placeholder="Amount of Coins to convert" min="10">
-        <button onclick="processAssetConversion()" style="margin-top:15px; background:#00ebd4; color:#000; font-weight:bold;">Execute Swap</button>
+<div id="tosOverlay" class="overlay" style="display:none;">
+    <div class="popup tos-popup">
+        <h2>Terms of Service</h2>
+        
+        <div class="tos-content">
+            <h3>1. Introduction</h3>
+            <p>Welcome to Azora! By accessing or using our platform, you agree to be bound by these Terms of Service (TOS). Please read them carefully.</p>
+            
+            <h3>2. Code of Conduct</h3>
+            <p>You agree not to exploit, hack, or disrupt Azora services. Toxic behavior, harassment, and cheating are strictly prohibited.</p>
+            
+            <h3>3. Avatar Customization & Moderation</h3>
+            <p>To keep Azora safe, fully naked single-color avatars (such as solid red, solid blue, or solid white) are not allowed. System safeguards may automatically apply a darker torso to your character to ensure appropriate attire.</p>
+            
+            <h3>4. Game Publishing</h3>
+            <p>By publishing games on Azora, you grant players the right to play and explore your creations. You retain the intellectual rights to your code, but must ensure all game content complies with our Community Rules.</p>
+            
+            <h3>5. Account Data</h3>
+            <p>Your account information is stored locally on your device. Azora is not responsible for data loss caused by clearing browser cookies or local storage.</p>
+        </div>
+
+        <button onclick="closeTOS()">Close & Return</button>
     </div>
 </div>
 
-<div id="azafnPopup" class="overlay" style="display:none; z-index: 10000; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); justify-content: center; align-items: center;">
-    <div style="background: #0b0f19; border: 2px solid #00bfff; width: 450px; border-radius: 12px; padding: 20px; color: #fff; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 0 20px rgba(0,191,255,0.4);">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 8px;">
-            <h3 style="margin:0; color:#00bfff;">🤖 AzaFn-1.0 Co-Creator</h3>
-            <span onclick="toggleAzaFnPopup()" style="cursor: pointer; font-size: 20px; font-weight: bold; color: #aaa;">&times;</span>
+<div id="searchOverlay" class="overlay" style="display:none;">
+    <div class="popup search-popup">
+        <h2>🔍 Search Azora</h2>
+        <div class="search-tabs">
+            <button id="searchUsersTab" class="tab-btn active" onclick="setSearchTab('users')">Users</button>
+            <button id="searchGamesTab" class="tab-btn" onclick="setSearchTab('games')">Games</button>
         </div>
-        <div id="azafnChatStream" style="height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #070a12; border: 1px solid #1e293b; border-radius: 8px; padding: 10px;"></div>
-        <div id="azafnInteractions"></div>
-        <div id="azafnInputContainer" style="display: none; gap: 8px;">
-            <input id="azafnUserPrompt" type="text" placeholder="Type prompt parameters..." style="flex:1; padding:10px; border-radius:6px; border:1px solid #1e293b; background:#070a12; color:#fff;">
-            <button onclick="processUserTextPrompt()" style="padding: 10px 16px; background:#00bfff; color:#000; font-weight:bold; border:none; border-radius:6px; cursor:pointer;">Send</button>
-        </div>
-        <button id="launchStudioBtn" onclick="window.location.href='creator.html'" style="display:none; width:100%; padding:12px; background:linear-gradient(180deg, #ffd700, #ffae00); color:#000; font-weight:bold; border:none; border-radius:6px; cursor:pointer; box-shadow: 0 4px 10px rgba(255,215,0,0.3);">🛠️ Launch Main Workspace Studio</button>
+        <input id="searchInput" type="text" placeholder="Search usernames..." oninput="performSearch()">
+        
+        <div class="search-results" id="searchResultsContainer">
+            </div>
+        <button onclick="closeSearch()">Close</button>
     </div>
 </div>
-<div class="panel-main">
-    <div class="sidebar-card">
-        <h3>🤖 AzaFn-1.0 AI Co-Creator</h3>
-        <p>Let our custom engine help design your next viral hit or standard masterpiece.</p>
-        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-            <button onclick="toggleAzaFnPopup()" style="background: #00bfff; color: #000; font-weight: bold;">💬 Talk to AzaFn-1.0</button>
-            <button onclick="window.location.href='creator.html'" style="background: #00ebd4; color: #000; font-weight: bold;">🛠️ Open Creator Studio</button>
+
+<div id="settingsOverlay" class="overlay" style="display:none;">
+    <div class="popup settings-popup">
+        <h2>⚙️ Settings</h2>
+        <div style="text-align: left; margin: 15px 0;">
+            <label style="color: #1e60ff; font-weight: bold; display: block; margin-bottom: 5px;">Visual Effects</label>
+            <label class="checkbox" style="color: #333 !important;">
+                <input type="checkbox" id="fallingTextToggle" checked onchange="toggleFallingText()"> Enable Falling Phrases
+            </label>
         </div>
         <hr>
-        <div id="guestButtons">
-            <button onclick="openAuthModal('create')">Sign Up</button>
-            <button onclick="openAuthModal('login')">Log In</button>
+        <button onclick="logoutUser()" style="background: #ff3b30; color: #ffffff;">Log Out</button>
+        <button onclick="closeSettings()">Close</button>
+    </div>
+</div>
+
+<div id="serverMessage" class="server-message" style="display:none;">
+    ⚠️ The website is currently experiencing heavy traffic.
+    <br>
+    Please try again in 10 minutes to 1 hour.
+    <br><br>
+    We apologize for the inconvenience and appreciate your patience.
+</div>
+
+<div class="topbar">
+    <a href="https://www.youtube.com/@Official_Azora" target="_blank">
+        <img src="logo.jpg" alt="Azora Logo" class="logo">
+    </a>
+
+    <h2>Azora</h2>
+
+    <div class="topbar-right">
+        <div class="currency-display">
+            🪙 AzoraCoins: <span id="bucks">0</span>
         </div>
-        <div id="userPanel" style="display:none;">
-            <p id="profileButton">👤 Account Profile</p>
-            <button onclick="openConvertModal()">💱 Convert</button>
-            <button onclick="logoutUser()" style="background:red !important; color:white !important;">Log Out</button>
+    </div>
+
+    <div id="guestButtons">
+        <button onclick="openCreateAccount()">Create Account</button>
+        <button onclick="openLogin()">Log In</button>
+    </div>
+
+    <div id="userPanel" style="display:none;">
+        <button id="searchButton" onclick="openSearch()">🔍 Search</button>
+        <button id="profileButton">👤 Username</button>
+        <button id="settingsButton" onclick="openSettings()">⚙️ Settings</button>
+    </div>
+</div>
+
+<div class="community-banner">
+    <p>🎉 Welcome to Azora! Build games. Customize avatars. Have fun.</p>
+</div>
+
+<div class="avatar-customizer-container">
+    <div id="avatar3d-canvas"></div>
+    <div class="customizer-controls">
+        <h3>My Avatar</h3>
+        
+        <label>Head:</label>
+        <input type="color" id="colorHead" value="#ffcc00" onchange="updateAvatarColors()">
+
+        <label>Torso:</label>
+        <input type="color" id="colorTorso" value="#1e60ff" onchange="updateAvatarColors()">
+
+        <div style="display: flex; gap: 8px;">
+            <div style="flex: 1;">
+                <label>Left Arm:</label>
+                <input type="color" id="colorLeftArm" value="#ffcc00" onchange="updateAvatarColors()">
+            </div>
+            <div style="flex: 1;">
+                <label>Right Arm:</label>
+                <input type="color" id="colorRightArm" value="#ffcc00" onchange="updateAvatarColors()">
+            </div>
         </div>
-        <hr>
-        <h3>Asset Inventory</h3>
-        <p>🪙 AzoraCoins: <span id="displayCoins">100</span></p>
-        <p>💎 AzoraDiamonds: <span id="displayDiamonds">0</span></p>
-        <p>📦 AzoraCubes: <span id="displayCubes">0</span></p>
-        <p style="font-size:11px; color:#e0f0ff;">*Note: Cubes are ultra-scarce and only available for Settings adjustments & conversions.</p>
-    </div>
 
-    <div class="container">
-        <h2>Avatar Studio Viewport</h2>
-        <div id="avatar-container"></div>
+        <div style="display: flex; gap: 8px;">
+            <div style="flex: 1;">
+                <label>Left Leg:</label>
+                <input type="color" id="colorLeftLeg" value="#00ebd4" onchange="updateAvatarColors()">
+            </div>
+            <div style="flex: 1;">
+                <label>Right Leg:</label>
+                <input type="color" id="colorRightLeg" value="#00ebd4" onchange="updateAvatarColors()">
+            </div>
+        </div>
+
+        <button onclick="saveAvatar()">Save Avatar</button>
+        <p id="modWarning" style="color: #ff3b30; display: none; font-size: 11px; font-weight: bold; margin-top: 5px; text-align: center;">
+            ⚠️ Single-tone avatar restricted! Torso updated.
+        </p>
     </div>
 </div>
 
-<div class="container" style="margin-top:20px;">
-    <h2>🛒 Azora Official AI Wardrobe Catalog</h2>
-    <div id="marketGrid" class="market-grid"></div>
+<div class="main-content-layout">
+    <h1>Welcome to Azora</h1>
+    <p>Welcome to Azora! Build games, customize avatars, and have fun!</p>
+    <p><strong>Subscribers:</strong> 2.41K</p>
+    <hr>
+
+    <div class="news-card">
+        <h2>📢 Azora News</h2>
+        <p>
+            Welcome to the official Azora website! This website is currently under construction. More features will be added soon!
+        </p>
+        <h3>Coming Soon</h3>
+        <p>More website features are currently being developed.</p>
+    </div>
+
+    <h2>About Azora</h2>
+    <p>Azora is a community-focused platform where you can build games, customize avatars, make friends, and explore creations made by players around the world. We're committed to keeping Azora friendly, creative, and fun for everyone.</p>
+
+    <div class="developer-setting-card">
+        <div class="setting-info">
+            <h3>BasicCharacterService</h3>
+            <p>Forces all players in your game to use your customized character template.</p>
+        </div>
+        
+        <label class="switch">
+            <input type="checkbox" id="charServiceToggle" onchange="toggleCharacterService()">
+            <span class="slider"></span>
+        </label>
+    </div>
+
+    <div class="menu">
+        <div class="dropdown">
+            <button class="dropbtn" onclick="toggleDropdown()">Other Socials ▼</button>
+            <div class="dropdown-content" id="socialDropdown">
+                <a href="https://www.youtube.com/@Official_Azora" target="_blank">YouTube</a>
+                <a href="#" target="_blank">Twitter (X)</a>
+                <a href="https://suno.com/@603blox" target="_blank">Suno</a>
+                <a href="https://www.tiktok.com/@603blox" target="_blank">TikTok</a>
+            </div>
+        </div>
+
+        <button onclick="window.open('https://www.roblox.com/users/9744531169/profile', '_blank')">
+            Roblox Profile
+        </button>
+
+        <button onclick="handleCreateClick()">
+            🛠️ Create a Game
+        </button>
+    </div>
 </div>
 
-<div class="footer-nav">
-    <div>
-        <span class="online-dot"></span>
-        <span>Azora Core Engine Live</span>
-    </div>
-    <div style="display:flex; gap:15px;">
-        <a href="appeal.html" style="color:#fff; text-decoration:none; font-size:13px;">⚖️ Submit Safety Appeal</a>
-        <span>Platform Security: Active</span>
-    </div>
-</div>
+<footer>
+    <p><strong>Creation date:</strong> June 26, 2026</p>
+</footer>
 
 <script src="script.js"></script>
 </body>
