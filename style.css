@@ -555,3 +555,106 @@ input:checked + .slider:before {
     color: #ff3b30;
     font-weight: bold;
 }
+/* --- Full-Screen 2000s Intro Curtain --- */
+.intro-curtain {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at center, #00ebd4 0%, #00aaff 45%, #1e60ff 100%);
+    z-index: 999999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    /* Fades the entire screen cover away after text finishes */
+    animation: fadeOutCurtain 0.5s ease 4.5s forwards;
+}
+
+.intro-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+/* "Welcome to" - Enters FIRST from the left */
+.text-welcome {
+    color: #ffffff;
+    font-size: 3.5rem;
+    font-family: 'Arial Black', Impact, sans-serif;
+    margin: 0;
+    white-space: nowrap;
+    text-shadow: 4px 4px 10px rgba(0, 0, 0, 0.35);
+    /* Moves left to right across 4.5 seconds */
+    animation: slideLeftToRight 4.5s cubic-bezier(0.25, 1, 0.5, 1) 0s both;
+}
+
+/* "Azora" - Stays off-screen right until 0.6s delay, then slides left */
+.text-azora {
+    color: #1e60ff;
+    font-size: 5.5rem;
+    font-family: 'Arial Black', Impact, sans-serif;
+    margin: 0;
+    white-space: nowrap;
+    letter-spacing: 3px;
+    text-shadow: 
+        -3px -3px 0 #fff,  
+         3px -3px 0 #fff,
+        -3px  3px 0 #fff,
+         3px  3px 0 #fff,
+         0px  8px 15px rgba(0, 0, 0, 0.4);
+    /* Delay of 0.6s lets 'Welcome to' enter first, then exits to the left */
+    animation: slideRightToLeft 3.9s cubic-bezier(0.25, 1, 0.5, 1) 0.6s both;
+}
+
+/* Keyframes: "Welcome to" moves Left -> Center -> Right */
+@keyframes slideLeftToRight {
+    0% {
+        transform: translateX(-150vw);
+        opacity: 0;
+    }
+    25% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    75% {
+        transform: translateX(15px);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(150vw);
+        opacity: 0;
+    }
+}
+
+/* Keyframes: "Azora" moves Right -> Center -> Left */
+@keyframes slideRightToLeft {
+    0% {
+        transform: translateX(150vw);
+        opacity: 0;
+    }
+    25% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    70% {
+        transform: translateX(-15px);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(-150vw);
+        opacity: 0;
+    }
+}
+
+/* Fades out the background screen so the login/create account popup is revealed */
+@keyframes fadeOutCurtain {
+    to {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+    }
+}

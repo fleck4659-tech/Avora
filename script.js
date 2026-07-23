@@ -456,9 +456,15 @@ function saveAvatar() {
 window.addEventListener("DOMContentLoaded", () => {
     init3DAvatar();
     
-    // Check if user logged in & load state
     const loggedIn = localStorage.getItem("loggedIn");
+    const introOverlay = document.getElementById("introOverlay");
+
     if (loggedIn === "true") {
+        // Skip intro entirely if already logged in
+        if (introOverlay) {
+            introOverlay.style.display = "none";
+        }
+
         const account = JSON.parse(localStorage.getItem("azoraAccount"));
         if (account) {
             document.getElementById("guestButtons").style.display = "none";
@@ -475,9 +481,19 @@ window.addEventListener("DOMContentLoaded", () => {
                 updateAvatarColors();
             }
         }
+    } else {
+        // Open Create Account modal at the 5-second mark
+        setTimeout(() => {
+            if (typeof openCreateAccount === "function") {
+                openCreateAccount();
+            } else {
+                // Fallback display if helper function is absent
+                const accountModal = document.getElementById("accountOverlay");
+                if (accountModal) accountModal.style.display = "flex";
+            }
+        }, 5000);
     }
     
-    // Load character service switch setting state
     const charServiceEnabled = localStorage.getItem("charServiceEnabled");
     if (charServiceEnabled === "true" && document.getElementById("charServiceToggle")) {
         document.getElementById("charServiceToggle").checked = true;
