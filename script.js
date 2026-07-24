@@ -452,113 +452,113 @@ function saveAvatar() {
     alert("3D Avatar saved successfully to your Azora account!");
 }
 
-// --- App Start ---
-window.addEventListener("DOMContentLoaded", () => {
-    // === THEME SYSTEM ===
+// ============================================================
+// THEME SYSTEM — MUST stay OUTSIDE DOMContentLoaded
+// ============================================================
 function getCurrentHour() {
     return new Date().getHours();
 }
 
 function isNightTime() {
     const hour = getCurrentHour();
-    return hour < 7 || hour >= 20; // Night from 8 PM to 7 AM
+    return hour < 7 || hour >= 20; // 8 PM – 7 AM
 }
 
 function applyTheme(theme) {
-    const body = document.documentElement;
-    let effectiveTheme = theme;
-
+    let effective = theme;
     if (theme === "auto") {
-        effectiveTheme = isNightTime() ? "dark" : "light";
+        effective = isNightTime() ? "dark" : "light";
     }
-
-    body.setAttribute("data-theme", effectiveTheme === "dark" ? "dark" : "light");
-    localStorage.setItem("azoraTheme", theme); // save preference
+    document.documentElement.setAttribute(
+        "data-theme",
+        effective === "dark" ? "dark" : "light"
+    );
+    localStorage.setItem("azoraTheme", theme);
+    console.log("[Azora] Theme →", theme, "effective:", effective);
 }
 
-function changeTheme(selected) {
-    applyTheme(selected);
+function changeTheme(value) {
+    applyTheme(value);
 }
 
-// Load theme preference on start
 function loadTheme() {
-    const savedTheme = localStorage.getItem("azoraTheme") || "auto";
-    const select = document.getElementById("themeSelect");
-    if (select) select.value = savedTheme;
-    applyTheme(savedTheme);
+    const saved = localStorage.getItem("azoraTheme") || "auto";
+    const sel = document.getElementById("themeSelect");
+    if (sel) sel.value = saved;
+    applyTheme(saved);
 }
 
-// Update theme every hour in case of auto mode
-setInterval(() => {
-    const currentPref = localStorage.getItem("azoraTheme") || "auto";
-    if (currentPref === "auto") {
+window.changeTheme = changeTheme;
+window.applyTheme = applyTheme;
+window.loadTheme = loadTheme;
+
+setInterval(function () {
+    if ((localStorage.getItem("azoraTheme") || "auto") === "auto") {
         applyTheme("auto");
     }
-}, 3600000); // every hour
-    // 1. Initialize 3D Avatar
+}, 3600000);
+
+// ============================================================
+// APP START
+// ============================================================
+window.addEventListener("DOMContentLoaded", function () {
     init3DAvatar();
 
-    // 2. Handle 2000s Intro Animation & Account Prompt
-    const splash = document.getElementById("introSplash");
-    const loggedIn = localStorage.getItem("loggedIn");
+    var splash = document.getElementById("introSplash");
+    var loggedIn = localStorage.getItem("loggedIn");
 
     if (loggedIn === "true") {
-        // Logged-in users skip the intro completely
         if (splash) splash.style.display = "none";
-    } else {
-        // Guest users: Play animation and prompt account modal
-        if (splash) {
-            splash.style.display = "flex";
-
-            // Total slide duration is ~3.4s (3.2s Welcome + 0.3s Azora delay)
-           // Change the timeout delay from 3400 (or 3500) to 6400 milliseconds (6.4 seconds)
-setTimeout(() => {
-    splash.classList.add("fade-out");
-
-    setTimeout(() => {
-        splash.style.display = "none";
-
-        if (typeof openCreateAccount === "function") {
-            openCreateAccount();
-        } else if (document.getElementById("accountOverlay")) {
-            document.getElementById("accountOverlay").style.display = "flex";
-                    }
-                }, 500);
-            }, 6400); // Updated to 6400ms for 5 seconds of center screen time
-        }
+    } else if (splash) {
+        splash.style.display = "flex";
+        setTimeout(function () {
+            splash.classList.add("fade-out");
+            setTimeout(function () {
+                splash.style.display = "none";
+                if (typeof openCreateAccount === "function") {
+                    openCreateAccount();
+                } else {
+                    var ov = document.getElementById("accountOverlay");
+                    if (ov) ov.style.display = "flex";
+                }
+            }, 500);
+        }, 6400);
     }
 
-    // 3. Check if user is logged in & load saved profile state
     if (loggedIn === "true") {
-        const account = JSON.parse(localStorage.getItem("azoraAccount"));
-        if (account) {
-            const guestButtons = document.getElementById("guestButtons");
-            const userPanel = document.getElementById("userPanel");
-            const profileButton = document.getElementById("profileButton");
+        try {
+            var account = JSON.parse(localStorage.getItem("azoraAccount"));
+            if (account) {
+                var gb = document.getElementById("guestButtons");
+                var up = document.getElementById("userPanel");
+                var pb = document.getElementById("profileButton");
+                if (gb) gb.style.display = "none";
+                if (up) up.style.display = "flex";
+                if (pb) pb.innerHTML = "👤 " + account.username;
 
-            if (guestButtons) guestButtons.style.display = "none";
-            if (userPanel) userPanel.style.display = "flex";
-            if (profileButton) profileButton.innerHTML = "👤 " + account.username;
-            
-            // Apply custom avatar colors if saved
-            if (account.avatar) {
-                if (document.getElementById("colorHead")) document.getElementById("colorHead").value = account.avatar.head || "#ffcc00";
-                if (document.getElementById("colorTorso")) document.getElementById("colorTorso").value = account.avatar.torso || "#1e60ff";
-                if (document.getElementById("colorLeftArm")) document.getElementById("colorLeftArm").value = account.avatar.leftArm || "#ffcc00";
-                if (document.getElementById("colorRightArm")) document.getElementById("colorRightArm").value = account.avatar.rightArm || "#ffcc00";
-                if (document.getElementById("colorLeftLeg")) document.getElementById("colorLeftLeg").value = account.avatar.leftLeg || "#00ebd4";
-                if (document.getElementById("colorRightLeg")) document.getElementById("colorRightLeg").value = account.avatar.rightLeg || "#00ebd4";
-                if (typeof updateAvatarColors === "function") updateAvatarColors();
+                if (account.avatar) {
+                    var map = {
+                        colorHead: "head", colorTorso: "torso",
+                        colorLeftArm: "leftArm", colorRightArm: "rightArm",
+                        colorLeftLeg: "leftLeg", colorRightLeg: "rightLeg"
+                    };
+                    for (var id in map) {
+                        var el = document.getElementById(id);
+                        if (el && account.avatar[map[id]]) {
+                            el.value = account.avatar[map[id]];
+                        }
+                    }
+                    if (typeof updateAvatarColors === "function") updateAvatarColors();
+                }
             }
-        }
-    }
-    
-    // 4. Load character service setting state
-    const charServiceEnabled = localStorage.getItem("charServiceEnabled");
-    if (charServiceEnabled === "true" && document.getElementById("charServiceToggle")) {
-        document.getElementById("charServiceToggle").checked = true;
+        } catch (e) {}
     }
 
-// 5. Load Theme Preference
-loadTheme();
+    var cse = localStorage.getItem("charServiceEnabled");
+    if (cse === "true") {
+        var t = document.getElementById("charServiceToggle");
+        if (t) t.checked = true;
+    }
+
+    loadTheme();
 });

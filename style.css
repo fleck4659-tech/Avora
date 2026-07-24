@@ -1,10 +1,9 @@
 body {
     font-family: Arial, sans-serif;
-    background: linear-gradient(
-        180deg,
-        #1e60ff, /* Deep royal/electric blue */
-        #00aaff, /* Mid-tone bright blue */
-        #00ebd4  /* Vivid bottom cyan */
+    margin: 0;
+    padding: 20px;
+    padding-bottom: 80px;
+}
     );
     color: #ffffff;
     margin: 0;
@@ -648,78 +647,73 @@ input:checked + .slider:before {
 }
 /* === THEME SYSTEM === */
 :root {
-    /* Light / Default (Bright Azora) */
-    --bg-gradient-start: #1e60ff;
-    --bg-gradient-mid: #00aaff;
-    --bg-gradient-end: #00ebd4;
-    --text-primary: #ffffff;
-    --text-secondary: #f0f7ff;
+    --bg-1: #1e60ff;
+    --bg-2: #00aaff;
+    --bg-3: #00ebd4;
+    --text-1: #ffffff;
+    --text-2: #f0f7ff;
     --accent: #1e60ff;
     --card-bg: rgba(255, 255, 255, 0.2);
     --card-border: #ffffff;
-    --topbar-bg: #1e60ff;
+    --topbar: #1e60ff;
     --popup-bg: rgba(255, 255, 255, 0.95);
-    --button-text: #1e60ff;
-    --footer-bg: #113cb0;
+    --footer: #113cb0;
+    --banner: rgba(0, 235, 212, 0.2);
 }
 
-[data-theme="dark"] {
-    --bg-gradient-start: #0f172a;
-    --bg-gradient-mid: #1e2937;
-    --bg-gradient-end: #334155;
-    --text-primary: #e2e8f0;
-    --text-secondary: #cbd5e1;
+html[data-theme="dark"] {
+    --bg-1: #0f172a;
+    --bg-2: #1e2937;
+    --bg-3: #334155;
+    --text-1: #e2e8f0;
+    --text-2: #cbd5e1;
     --accent: #60a5fa;
     --card-bg: rgba(15, 23, 42, 0.85);
     --card-border: #475569;
-    --topbar-bg: #1e2937;
+    --topbar: #1e2937;
     --popup-bg: rgba(30, 41, 59, 0.98);
-    --button-text: #60a5fa;
-    --footer-bg: #0f172a;
+    --footer: #0f172a;
+    --banner: rgba(96, 165, 250, 0.15);
 }
 
-/* Apply variables */
 body {
-    background: linear-gradient(
-        180deg,
-        var(--bg-gradient-start),
-        var(--bg-gradient-mid),
-        var(--bg-gradient-end)
-    );
-    color: var(--text-primary);
+    background: linear-gradient(180deg, var(--bg-1), var(--bg-2), var(--bg-3)) !important;
+    color: var(--text-1) !important;
 }
 
-h1, h2, .customizer-controls h3, .setting-info h3 {
-    color: var(--text-primary);
+h1, h2, .topbar h2, .customizer-controls h3, .setting-info h3 {
+    color: var(--text-1) !important;
 }
 
-p, .setting-info p {
-    color: var(--text-secondary);
+p, .setting-info p, .customizer-controls label {
+    color: var(--text-2) !important;
 }
 
 .topbar {
-    background: var(--topbar-bg);
+    background: var(--topbar) !important;
 }
 
 .community-banner {
-    background: rgba(96, 165, 250, 0.2); /* softer blue for dark */
-    border-bottom: 3px solid var(--card-border);
-    color: var(--text-primary);
+    background: var(--banner) !important;
+    border-bottom-color: var(--card-border) !important;
+    color: var(--text-1) !important;
 }
 
-.news-card, .developer-setting-card, .avatar-customizer-container {
-    background: var(--card-bg);
-    border: 2px solid var(--card-border);
+.news-card,
+.developer-setting-card,
+.avatar-customizer-container {
+    background: var(--card-bg) !important;
+    border-color: var(--card-border) !important;
 }
 
 footer {
-    background: var(--footer-bg);
-    color: var(--text-primary);
+    background: var(--footer) !important;
+    color: var(--text-1) !important;
 }
 
 .popup {
-    background: var(--popup-bg);
-    border: 3px solid var(--accent);
+    background: var(--popup-bg) !important;
+    border-color: var(--accent) !important;
 }
 
 .popup h2, .popup p, .popup label, .checkbox {
