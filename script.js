@@ -201,10 +201,16 @@ function createAccount() {
         return;
     }
 
-    // Default character customization template matching the 6-joint setup
+    // Assign unique user ID: Aza: 0, Aza: 1, Aza: 2, ...
+    var registry = [];
+    try { registry = JSON.parse(localStorage.getItem("azoraUserRegistry") || "[]"); } catch (e) {}
+    var nextId = registry.length;
+    var userId = "Aza: " + nextId;
+
     const account = {
         username: username,
         password: password,
+        userId: userId,
         avatar: {
             head: "#ffcc00",
             torso: "#1e60ff",
@@ -216,10 +222,16 @@ function createAccount() {
         }
     };
 
+    registry.push({
+        userId: userId,
+        username: username,
+        createdAt: Date.now()
+    });
+    localStorage.setItem("azoraUserRegistry", JSON.stringify(registry));
     localStorage.setItem("azoraAccount", JSON.stringify(account));
     localStorage.setItem("loggedIn", "true");
 
-    alert("🎉 Welcome to Azora, " + username + "!");
+    alert("🎉 Welcome to Azora, " + username + "!\nYour User ID is " + userId);
     location.reload(); 
 }
 
@@ -943,3 +955,365 @@ function renderPublicFeed() {
 window.openPublicFeed = openPublicFeed;
 window.closePublicFeed = closePublicFeed;
 window.renderPublicFeed = renderPublicFeed;
+
+
+// ============================================================
+// Profiles, Follow, Friends & Chat
+// ============================================================
+
+let currentChatFriend = null;
+
+function getMyUsername() {
+    try {
+        var acc = JSON.parse(localStorage.getItem("azoraAccount") || "{}");
+        return acc.username || "";
+    } catch (e) { return ""; }
+}
+
+function getSocialData() {
+    try {
+        return JSON.parse(localStorage.getItem("azoraSocial") || "{}");
+    } catch (e) { return {}; }
+}
+
+function saveSocialData(data) {
+    localStorage.setItem("azoraSocial", JSON.stringify(data));
+}
+
+function ensureUserSocial(data, username) {
+    if (!data[username]) {
+        data[username] = { followers: [], following: [], friends: [], friendRequests: [] };
+    }
+    return data[username];
+}
+
+function openMyProfile() {
+    var me = getMyUsername();
+    if (!me) {
+        alert("Please log in first!");
+        openCreateAccount();
+        return;
+    }
+    openUserProfile(me);
+}
+
+function openUserProfile(username) {
+    if (!username) return;
+    var data = getSocialData();
+    var u = ensureUserSocial(data, username);
+    // Persist if newly created
+    saveSocialData(data);
+
+    document.getElementById("profileUsername").textContent = username;
+    document.getElementById("profileStats").textContent =
+        (u.followers.length) + " Followers · " +
+        (u.following.length) + " Following · " +
+        (u.friends.length) + " Friends";
+
+    var actions = document.getElementById("profileActions");
+    actions.innerHTML = "";
+    var me = getMyUsername();
+    var loggedIn = localStorage.getItem("loggedIn") === "true";
+
+    if (!loggedIn) {
+        actions.innerHTML = '<p style="color:#666;">Log in to follow or add friends.</p>';
+    } else if (me === username) {
+        actions.innerHTML = '<p style="color:#1e60ff;font-weight:bold;">This is your profile</p>';
+    } else {
+        var myData = ensureUserSocial(data, me);
+        var isFollowing = myData.following.indexOf(username) !== -1;
+        var isFriend = myData.friends.indexOf(username) !== -1;
+        var pendingOut = (myData.friendRequests || []).indexOf(username) !== -1;
+        var pendingIn = (u.friendRequests || []).indexOf(me) !== -1;
+
+        // Follow button
+        var followBtn = document.createElement("button");
+        followBtn.textContent = isFollowing ? "Unfollow " + username : "Follow " + username;
+        followBtn.style.background = isFollowing ? "#e6e6e6" : "linear-gradient(180deg,#3b82f6,#1e60ff)";
+        followBtn.style.color = isFollowing ? "#1e60ff" : "#fff";
+        followBtn.onclick = function () { toggleFollow(username); };
+        actions.appendChild(followBtn);
+
+        // Add Friend button (right next to Follow conceptually — stacked below)
+        var friendBtn = document.createElement("button");
+        if (isFriend) {
+            friendBtn.textContent = "✓ Friends";
+            friendBtn.disabled = true;
+            friendBtn.style.opacity = "0.8";
+        } else if (pendingOut) {
+            friendBtn.textContent = "Request Sent";
+            friendBtn.disabled = true;
+            friendBtn.style.opacity = "0.8";
+        } else if (pendingIn) {
+            friendBtn.textContent = "Accept Friend Request";
+            friendBtn.style.background = "linear-gradient(180deg,#34d399,#10b981)";
+            friendBtn.style.color = "#fff";
+            friendBtn.onclick = function () { acceptFriend(username); };
+        } else {
+            friendBtn.textContent = "Add Friend";
+            friendBtn.style.background = "linear-gradient(180deg,#a78bfa,#7c3aed)";
+            friendBtn.style.color = "#fff";
+            friendBtn.onclick = function () { sendFriendRequest(username); };
+        }
+        actions.appendChild(friendBtn);
+
+        // Message if friends
+        if (isFriend) {
+            var msgBtn = document.createElement("button");
+            msgBtn.textContent = "💬 Message";
+            msgBtn.style.background = "linear-gradient(180deg,#3b82f6,#1e60ff)";
+            msgBtn.style.color = "#fff";
+            msgBtn.onclick = function () {
+                closeProfile();
+                openChatPanel();
+                selectChatFriend(username);
+            };
+            actions.appendChild(msgBtn);
+        }
+    }
+
+    document.getElementById("profileOverlay").style.display = "flex";
+}
+
+function closeProfile() {
+    document.getElementById("profileOverlay").style.display = "none";
+}
+
+function toggleFollow(username) {
+    var me = getMyUsername();
+    if (!me) return;
+    var data = getSocialData();
+    var myData = ensureUserSocial(data, me);
+    var theirData = ensureUserSocial(data, username);
+
+    var idx = myData.following.indexOf(username);
+    if (idx === -1) {
+        myData.following.push(username);
+        if (theirData.followers.indexOf(me) === -1) theirData.followers.push(me);
+    } else {
+        myData.following.splice(idx, 1);
+        var fIdx = theirData.followers.indexOf(me);
+        if (fIdx !== -1) theirData.followers.splice(fIdx, 1);
+    }
+    saveSocialData(data);
+    openUserProfile(username);
+}
+
+function sendFriendRequest(username) {
+    var me = getMyUsername();
+    if (!me) return;
+    var data = getSocialData();
+    var myData = ensureUserSocial(data, me);
+    var theirData = ensureUserSocial(data, username);
+
+    if (myData.friends.indexOf(username) !== -1) return;
+    if ((myData.friendRequests || []).indexOf(username) === -1) {
+        myData.friendRequests = myData.friendRequests || [];
+        myData.friendRequests.push(username);
+    }
+    if ((theirData.friendRequests || []).indexOf(me) === -1) {
+        theirData.friendRequests = theirData.friendRequests || [];
+        // Incoming request for them is tracked on their friendRequests as "from me"
+        // We use a simple model: friendRequests on A = people A has requested
+        // To accept, B checks if A listed B in friendRequests — handled in openUserProfile pendingIn
+    }
+    // Store incoming: on their profile we check if ME is in THEIR... wait
+    // Simpler model: each user has friendRequests = usernames THEY sent requests TO
+    // pendingIn for viewing profile of X: check if X.friendRequests includes me? No that's outgoing from X.
+    // pendingIn: I am viewing X, and X sent me a request means X.friendRequests includes me.
+    // Actually: if X requested me, X.friendRequests contains "me".
+    // pendingIn when viewing X: X.friendRequests includes me.
+    // pendingOut when viewing X: myData.friendRequests includes X.
+
+    // For accept: when I view X and X.friendRequests includes me, I can accept.
+    saveSocialData(data);
+    alert("Friend request sent to " + username + "!");
+    openUserProfile(username);
+}
+
+function acceptFriend(username) {
+    var me = getMyUsername();
+    if (!me) return;
+    var data = getSocialData();
+    var myData = ensureUserSocial(data, me);
+    var theirData = ensureUserSocial(data, username);
+
+    // username sent request to me → username.friendRequests includes me
+    var reqIdx = (theirData.friendRequests || []).indexOf(me);
+    if (reqIdx !== -1) theirData.friendRequests.splice(reqIdx, 1);
+
+    // Also clear if I had requested them
+    var myReq = (myData.friendRequests || []).indexOf(username);
+    if (myReq !== -1) myData.friendRequests.splice(myReq, 1);
+
+    if (myData.friends.indexOf(username) === -1) myData.friends.push(username);
+    if (theirData.friends.indexOf(me) === -1) theirData.friends.push(me);
+
+    saveSocialData(data);
+    alert("You and " + username + " are now friends!");
+    openUserProfile(username);
+}
+
+// --- Chat ---
+function openChatPanel() {
+    if (localStorage.getItem("loggedIn") !== "true") {
+        alert("Please log in to use Chat!");
+        openCreateAccount();
+        return;
+    }
+    document.getElementById("chatOverlay").style.display = "flex";
+    renderFriendsList();
+    currentChatFriend = null;
+    document.getElementById("chatWithLabel").textContent = "Select a friend to chat";
+    document.getElementById("chatMessages").innerHTML = "";
+    document.getElementById("chatInputRow").style.display = "none";
+}
+
+function closeChatPanel() {
+    document.getElementById("chatOverlay").style.display = "none";
+}
+
+function renderFriendsList() {
+    var me = getMyUsername();
+    var data = getSocialData();
+    var myData = ensureUserSocial(data, me);
+    var list = document.getElementById("friendsList");
+    var noMsg = document.getElementById("noFriendsMsg");
+    list.innerHTML = "";
+
+    if (!myData.friends || myData.friends.length === 0) {
+        noMsg.style.display = "block";
+        return;
+    }
+    noMsg.style.display = "none";
+    myData.friends.forEach(function (friend) {
+        var item = document.createElement("div");
+        item.className = "friend-item" + (currentChatFriend === friend ? " active" : "");
+        item.innerHTML =
+            '<div class="friend-avatar">' + friend[0].toUpperCase() + '</div>' +
+            '<span>' + escapeHtml(friend) + '</span>';
+        item.onclick = function () { selectChatFriend(friend); };
+        list.appendChild(item);
+    });
+}
+
+function selectChatFriend(friend) {
+    currentChatFriend = friend;
+    document.getElementById("chatWithLabel").textContent = "Chat with " + friend;
+    document.getElementById("chatInputRow").style.display = "flex";
+    renderFriendsList();
+    renderChatMessages();
+}
+
+function getChatKey(a, b) {
+    return "azoraChat_" + [a, b].sort().join("_");
+}
+
+function renderChatMessages() {
+    var box = document.getElementById("chatMessages");
+    if (!box || !currentChatFriend) return;
+    var me = getMyUsername();
+    var key = getChatKey(me, currentChatFriend);
+    var messages = [];
+    try { messages = JSON.parse(localStorage.getItem(key) || "[]"); } catch (e) {}
+
+    box.innerHTML = "";
+    if (messages.length === 0) {
+        box.innerHTML = '<p style="color:rgba(255,255,255,0.6);text-align:center;margin-top:40px;">No messages yet. Say hi!</p>';
+        return;
+    }
+    messages.forEach(function (m) {
+        var div = document.createElement("div");
+        div.className = "chat-bubble " + (m.from === me ? "mine" : "theirs");
+        div.textContent = m.text;
+        box.appendChild(div);
+    });
+    box.scrollTop = box.scrollHeight;
+}
+
+function sendChatMessage() {
+    var input = document.getElementById("chatInput");
+    var text = (input.value || "").trim();
+    if (!text || !currentChatFriend) return;
+    var me = getMyUsername();
+    if (!me) return;
+
+    var key = getChatKey(me, currentChatFriend);
+    var messages = [];
+    try { messages = JSON.parse(localStorage.getItem(key) || "[]"); } catch (e) {}
+    messages.push({ from: me, text: text, at: Date.now() });
+    localStorage.setItem(key, JSON.stringify(messages));
+    input.value = "";
+    renderChatMessages();
+}
+
+// Wire search "View" to open profiles
+function performSearch() {
+    const query = document.getElementById("searchInput").value.trim().toLowerCase();
+    const resultsContainer = document.getElementById("searchResultsContainer");
+    resultsContainer.innerHTML = "";
+
+    let localUsers = [];
+    const localAcc = localStorage.getItem("azoraAccount");
+    if (localAcc) {
+        try {
+            const parsed = JSON.parse(localAcc);
+            localUsers.push({ username: parsed.username, profileLink: "#" });
+        } catch (e) {}
+    }
+
+    // Also include known social users
+    var social = getSocialData();
+    Object.keys(social).forEach(function (uname) {
+        if (!localUsers.some(function (u) { return u.username.toLowerCase() === uname.toLowerCase(); })) {
+            localUsers.push({ username: uname, profileLink: "#" });
+        }
+    });
+
+    const allUsers = [...database.users, ...localUsers];
+    const uniqueUsers = Array.from(new Map(allUsers.map(item => [item.username.toLowerCase(), item])).values());
+
+    let results = [];
+    if (currentSearchTab === "users") {
+        results = uniqueUsers.filter(u => u.username.toLowerCase().includes(query));
+    } else {
+        results = database.games.filter(g => g.title.toLowerCase().includes(query) || g.author.toLowerCase().includes(query));
+    }
+
+    if (results.length === 0) {
+        resultsContainer.innerHTML = "<div class='no-results'>No results found.</div>";
+        return;
+    }
+
+    results.forEach(item => {
+        const row = document.createElement("div");
+        row.className = "search-result-item";
+        if (currentSearchTab === "users") {
+            row.innerHTML = '👤 <strong>' + escapeHtml(item.username) + '</strong> ';
+            var viewBtn = document.createElement("a");
+            viewBtn.href = "#";
+            viewBtn.className = "search-action-btn";
+            viewBtn.textContent = "View";
+            viewBtn.onclick = function (e) {
+                e.preventDefault();
+                closeSearch();
+                openUserProfile(item.username);
+            };
+            row.appendChild(viewBtn);
+        } else {
+            row.innerHTML = '🎮 <strong>' + escapeHtml(item.title) + '</strong> <span class="creator-by">by ' + escapeHtml(item.author) + '</span> <a href="' + item.link + '" class="search-action-btn">Play</a>';
+        }
+        resultsContainer.appendChild(row);
+    });
+}
+
+window.openMyProfile = openMyProfile;
+window.openUserProfile = openUserProfile;
+window.closeProfile = closeProfile;
+window.toggleFollow = toggleFollow;
+window.sendFriendRequest = sendFriendRequest;
+window.acceptFriend = acceptFriend;
+window.openChatPanel = openChatPanel;
+window.closeChatPanel = closeChatPanel;
+window.selectChatFriend = selectChatFriend;
+window.sendChatMessage = sendChatMessage;

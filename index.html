@@ -112,7 +112,8 @@
     <div id="userPanel" style="display:none;">
         <button id="searchButton" onclick="openSearch()">🔍 Search</button>
         <button id="azafnButton" onclick="openAzaFn()">🤖 AzaFn</button>
-        <button id="profileButton">👤 Username</button>
+        <button id="chatButton" onclick="openChatPanel()">💬 Chat</button>
+        <button id="profileButton" onclick="openMyProfile()">👤 Username</button>
         <button id="settingsButton" onclick="openSettings()">⚙️ Settings</button>
     </div>
 </div>
@@ -217,6 +218,45 @@
     </div>
     <div class="azafn-body">
         <div class="azafn-feed-panel active" id="publicFeedPanel" style="display:flex;"></div>
+    </div>
+</div>
+
+
+<!-- User Profile -->
+<div id="profileOverlay" class="overlay" style="display:none;">
+    <div class="popup profile-popup" style="max-width:420px;">
+        <img src="logo.jpg" class="popupLogo" alt="Avatar" id="profileAvatarImg">
+        <h2 id="profileUsername">Username</h2>
+        <p id="profileStats" style="color:#666;font-size:14px;">0 Followers · 0 Following · 0 Friends</p>
+        <div id="profileActions" style="display:flex;flex-direction:column;gap:10px;margin-top:15px;">
+            <!-- Follow / Add Friend / Message buttons injected by JS -->
+        </div>
+        <button onclick="closeProfile()" style="margin-top:15px;">Close</button>
+    </div>
+</div>
+
+<!-- Chat Panel -->
+<div id="chatOverlay" class="azafn-overlay" style="display:none;">
+    <div class="azafn-header">
+        <h2><img src="logo.jpg" alt="Azora"> Chat</h2>
+        <div class="azafn-tabs">
+            <button onclick="closeChatPanel()" style="margin:0;background:#ff3b30;color:#fff;">✕ Close</button>
+        </div>
+    </div>
+    <div class="chat-layout">
+        <div class="chat-sidebar" id="chatSidebar">
+            <h3 style="color:#fff;margin:0 0 10px 0;font-size:14px;">Friends</h3>
+            <div id="friendsList"></div>
+            <p id="noFriendsMsg" class="empty-feed" style="padding:20px 10px;font-size:13px;display:none;">No friends yet. Search for users and tap Add Friend!</p>
+        </div>
+        <div class="chat-main">
+            <div class="chat-with" id="chatWithLabel">Select a friend to chat</div>
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="chat-input-row" id="chatInputRow" style="display:none;">
+                <input type="text" id="chatInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendChatMessage()">
+                <button onclick="sendChatMessage()">Send</button>
+            </div>
+        </div>
     </div>
 </div>
 
