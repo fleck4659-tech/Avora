@@ -562,3 +562,384 @@ window.addEventListener("DOMContentLoaded", function () {
 
     loadTheme();
 });
+
+
+// ============================================================
+// AzaFn-1.0 — AI Game Generator + Social Feed
+// ============================================================
+let azaFnConversation = [];
+let azaFnPendingDescription = "";
+let azaFnGames = [];
+
+function openAzaFn() {
+    if (localStorage.getItem("loggedIn") !== "true") {
+        alert("Please log in to use AzaFn-1.0!");
+        openCreateAccount();
+        return;
+    }
+    document.getElementById("azafnOverlay").style.display = "flex";
+    loadAzaFnGames();
+    if (azaFnConversation.length === 0) {
+        addAzaFnAIMessage(
+            "Hi! I'm <strong>AzaFn-1.0</strong> 🤖 — Azora's game-building AI.<br><br>" +
+            "Tell me what kind of game you want to create. Be as detailed as you like!<br><br>" +
+            "⚠️ <strong>Important:</strong> You must clearly say whether you want a <strong>2D</strong> or <strong>3D</strong> game. " +
+            "I cannot assume the dimensions — if you don't specify, I'll ask."
+        );
+    }
+    renderAzaFnMessages();
+    switchAzaFnTab("chat");
+}
+
+function closeAzaFn() {
+    document.getElementById("azafnOverlay").style.display = "none";
+}
+
+function switchAzaFnTab(tab) {
+    var chat = document.getElementById("azafnChatPanel");
+    var feed = document.getElementById("azafnFeedPanel");
+    var tChat = document.getElementById("azafnTabChat");
+    var tFeed = document.getElementById("azafnTabFeed");
+    if (tab === "chat") {
+        chat.classList.remove("hidden");
+        feed.classList.remove("active");
+        tChat.classList.add("active");
+        tFeed.classList.remove("active");
+    } else {
+        chat.classList.add("hidden");
+        feed.classList.add("active");
+        tChat.classList.remove("active");
+        tFeed.classList.add("active");
+        renderAzaFnFeed();
+    }
+}
+
+function detectDimensions(text) {
+    var t = text.toLowerCase();
+    var has3d = /\b3[\s-]?d\b|\bthree[\s-]?dimensional\b|\bin 3d\b/.test(t);
+    var has2d = /\b2[\s-]?d\b|\btwo[\s-]?dimensional\b|\bin 2d\b/.test(t);
+    if (has3d && !has2d) return "3D";
+    if (has2d && !has3d) return "2D";
+    if (has3d && has2d) return "ambiguous";
+    return null;
+}
+
+function addAzaFnAIMessage(html) { azaFnConversation.push({ role: "ai", text: html }); }
+function addAzaFnUserMessage(text) { azaFnConversation.push({ role: "user", text: text }); }
+
+function escapeHtml(str) {
+    return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function renderAzaFnMessages() {
+    var box = document.getElementById("azafnMessages");
+    if (!box) return;
+    box.innerHTML = "";
+    azaFnConversation.forEach(function (msg, idx) {
+        var div = document.createElement("div");
+        div.className = "azafn-msg " + (msg.role === "user" ? "user" : "ai");
+        if (msg.role === "ai") {
+            div.innerHTML =
+                '<div class="azafn-msg-label">AzaFn-1.0</div><div>' + msg.text + '</div>' +
+                '<button class="azafn-build-btn" onclick="azaFnBuild(' + idx + ')">' +
+                '<img src="logo.jpg" alt="Build"> Build</button>';
+        } else {
+            div.innerHTML = '<div class="azafn-msg-label">You</div><div>' + escapeHtml(msg.text) + '</div>';
+        }
+        box.appendChild(div);
+    });
+    box.scrollTop = box.scrollHeight;
+}
+
+function sendAzaFnMessage() {
+    var input = document.getElementById("azafnInput");
+    var text = (input.value || "").trim();
+    if (!text) return;
+    input.value = "";
+    addAzaFnUserMessage(text);
+    azaFnPendingDescription = text;
+    var dims = detectDimensions(text);
+    if (!dims) {
+        addAzaFnAIMessage(
+            "I heard your idea! 🎮<br><br>Before I can help you build it, I need to know the <strong>dimensions</strong>.<br><br>" +
+            "Do you want this game to be <strong>2D</strong> (side-view, top-down, etc.) or <strong>3D</strong> (full 3D world with depth)?<br><br>" +
+            "Please reply with <strong>2D</strong> or <strong>3D</strong> — I cannot assume."
+        );
+    } else if (dims === "ambiguous") {
+        addAzaFnAIMessage("You mentioned both 2D and 3D. Please pick <strong>one</strong> clearly.");
+    } else {
+        addAzaFnAIMessage(
+            "Great! Here's what I understood:<br><br>📐 <strong>Dimensions:</strong> " + dims +
+            "<br>📝 <strong>Your idea:</strong> " + escapeHtml(text) +
+            "<br><br>When you're ready, press the blue <strong>Build</strong> button below to generate your game and publish it to the Feed!"
+        );
+    }
+    renderAzaFnMessages();
+}
+
+function azaFnBuild(msgIndex) {
+    var description = azaFnPendingDescription;
+    for (var i = msgIndex - 1; i >= 0; i--) {
+        if (azaFnConversation[i].role === "user") { description = azaFnConversation[i].text; break; }
+    }
+    if (!description || description.trim().length < 3) {
+        addAzaFnAIMessage("Please describe your game idea first, then press Build!");
+        renderAzaFnMessages(); return;
+    }
+    var finalDims = detectDimensions(description);
+    if (!finalDims || finalDims === "ambiguous") {
+        for (var j = azaFnConversation.length - 1; j >= 0; j--) {
+            if (azaFnConversation[j].role === "user") {
+                var d = detectDimensions(azaFnConversation[j].text);
+                if (d === "2D" || d === "3D") { finalDims = d; break; }
+            }
+        }
+    }
+    if (!finalDims || finalDims === "ambiguous") {
+        addAzaFnAIMessage("I still don't know if this should be <strong>2D</strong> or <strong>3D</strong>. Please tell me clearly, then press Build again.");
+        renderAzaFnMessages(); return;
+    }
+    var account = JSON.parse(localStorage.getItem("azoraAccount") || "{}");
+    var username = account.username || "Player";
+    var words = description.trim().split(/\s+/).slice(0, 5).join(" ");
+    var title = (words.length > 40 ? words.slice(0, 40) + "…" : words) + " (" + finalDims + ")";
+    var game = {
+        id: "game_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+        title: title, description: description, dimensions: finalDims,
+        creator: username, createdAt: Date.now(), likes: 0, likedBy: [], savedBy: [], comments: [], published: true
+    };
+    azaFnGames.unshift(game);
+    saveAzaFnGames();
+    addAzaFnAIMessage(
+        "✅ <strong>Game built and published!</strong><br><br>🎮 <strong>" + escapeHtml(game.title) +
+        "</strong><br>📐 " + finalDims +
+        "<br><br>It's now live in the <strong>Feed</strong>! Click the <strong>🎮 Feed</strong> button at the top of the page to see it, like, comment, save, or share. " +
+        "As the creator you can also <strong>Edit</strong> it — republishing pushes it back into the algorithm!"
+    );
+    renderAzaFnMessages();
+}
+
+function loadAzaFnGames() {
+    try { azaFnGames = JSON.parse(localStorage.getItem("azoraAzaFnGames") || "[]"); }
+    catch (e) { azaFnGames = []; }
+}
+function saveAzaFnGames() { localStorage.setItem("azoraAzaFnGames", JSON.stringify(azaFnGames)); }
+
+function renderAzaFnFeed() {
+    var panel = document.getElementById("azafnFeedPanel");
+    if (!panel) return;
+    loadAzaFnGames();
+    if (azaFnGames.length === 0) {
+        panel.innerHTML = '<div class="empty-feed">No games yet! Please come back later!</div>';
+        return;
+    }
+    var account = JSON.parse(localStorage.getItem("azoraAccount") || "{}");
+    var myName = account.username || "";
+    panel.innerHTML = "";
+    azaFnGames.forEach(function (game) {
+        var isOwner = game.creator === myName;
+        var liked = (game.likedBy || []).indexOf(myName) !== -1;
+        var saved = (game.savedBy || []).indexOf(myName) !== -1;
+        var initial = (game.creator || "?")[0].toUpperCase();
+        var timeStr = new Date(game.createdAt).toLocaleString();
+        var commentsHtml = "";
+        (game.comments || []).forEach(function (c) {
+            commentsHtml += '<div class="game-comment"><strong>' + escapeHtml(c.user) + ':</strong> ' + escapeHtml(c.text) + '</div>';
+        });
+        var card = document.createElement("div");
+        card.className = "game-card";
+        card.innerHTML =
+            '<div class="game-card-header"><div class="game-card-avatar">' + initial + '</div>' +
+            '<div class="game-card-meta"><strong>' + escapeHtml(game.creator) + '</strong><span>' + timeStr + '</span></div></div>' +
+            '<div class="game-card-title">' + escapeHtml(game.title) + '</div>' +
+            '<div class="game-card-dims">' + escapeHtml(game.dimensions) + '</div>' +
+            '<div class="game-card-desc">' + escapeHtml(game.description) + '</div>' +
+            '<div class="game-card-actions">' +
+            '<button class="game-action-btn' + (liked?' liked':'') + '" onclick="azaFnLike(\'' + game.id + '\')">' + (liked?'❤️ ':'🤍 ') + (game.likes||0) + '</button>' +
+            '<button class="game-action-btn" onclick="azaFnToggleComments(\'' + game.id + '\')">💬 Comments (' + (game.comments||[]).length + ')</button>' +
+            '<button class="game-action-btn' + (saved?' saved':'') + '" onclick="azaFnSave(\'' + game.id + '\')">' + (saved?'🔖 Saved':'📑 Save') + '</button>' +
+            '<button class="game-action-btn" onclick="azaFnShare(\'' + game.id + '\')">📤 Share</button>' +
+            (isOwner ? '<button class="game-action-btn" onclick="azaFnToggleEdit(\'' + game.id + '\')">✏️ Edit</button>' : '') +
+            '</div>' +
+            '<div class="game-comments" id="comments_' + game.id + '">' + commentsHtml +
+            '<div class="comment-input-row"><input type="text" id="commentInput_' + game.id + '" placeholder="Write a comment...">' +
+            '<button onclick="azaFnAddComment(\'' + game.id + '\')">Post</button></div></div>' +
+            (isOwner ? '<div class="game-edit-area" id="edit_' + game.id + '"><textarea id="editDesc_' + game.id + '">' + escapeHtml(game.description) +
+            '</textarea><button onclick="azaFnRepublish(\'' + game.id + '\')" style="margin-top:8px;background:#1e60ff;color:#fff;">🚀 Publish Changes</button></div>' : '');
+        panel.appendChild(card);
+    });
+}
+
+function azaFnLike(gameId) {
+    var myName = (JSON.parse(localStorage.getItem("azoraAccount") || "{}")).username || "";
+    if (!myName) return;
+    var game = azaFnGames.find(function (g) { return g.id === gameId; });
+    if (!game) return;
+    game.likedBy = game.likedBy || [];
+    var idx = game.likedBy.indexOf(myName);
+    if (idx === -1) { game.likedBy.push(myName); game.likes = (game.likes || 0) + 1; }
+    else { game.likedBy.splice(idx, 1); game.likes = Math.max(0, (game.likes || 0) - 1); }
+    saveAzaFnGames(); renderAzaFnFeed();
+}
+
+function azaFnSave(gameId) {
+    var myName = (JSON.parse(localStorage.getItem("azoraAccount") || "{}")).username || "";
+    if (!myName) return;
+    var game = azaFnGames.find(function (g) { return g.id === gameId; });
+    if (!game) return;
+    game.savedBy = game.savedBy || [];
+    var idx = game.savedBy.indexOf(myName);
+    if (idx === -1) game.savedBy.push(myName); else game.savedBy.splice(idx, 1);
+    saveAzaFnGames(); renderAzaFnFeed();
+}
+
+function azaFnShare(gameId) {
+    var game = azaFnGames.find(function (g) { return g.id === gameId; });
+    if (!game) return;
+    var text = 'Check out "' + game.title + '" by ' + game.creator + ' on Azora! 🎮';
+    if (navigator.clipboard && navigator.clipboard.writeText)
+        navigator.clipboard.writeText(text).then(function () { alert("Copied!\n\n" + text); });
+    else alert(text);
+}
+
+function azaFnToggleComments(gameId) {
+    var el = document.getElementById("comments_" + gameId);
+    if (el) el.classList.toggle("open");
+}
+
+function azaFnAddComment(gameId) {
+    var input = document.getElementById("commentInput_" + gameId);
+    var text = (input && input.value || "").trim();
+    if (!text) return;
+    var myName = (JSON.parse(localStorage.getItem("azoraAccount") || "{}")).username || "Guest";
+    var game = azaFnGames.find(function (g) { return g.id === gameId; });
+    if (!game) return;
+    game.comments = game.comments || [];
+    game.comments.push({ user: myName, text: text, at: Date.now() });
+    saveAzaFnGames(); renderAzaFnFeed();
+    var el = document.getElementById("comments_" + gameId);
+    if (el) el.classList.add("open");
+}
+
+function azaFnToggleEdit(gameId) {
+    var el = document.getElementById("edit_" + gameId);
+    if (el) el.classList.toggle("open");
+}
+
+function azaFnRepublish(gameId) {
+    var textarea = document.getElementById("editDesc_" + gameId);
+    var newDesc = (textarea && textarea.value || "").trim();
+    if (!newDesc) { alert("Description cannot be empty!"); return; }
+    var game = azaFnGames.find(function (g) { return g.id === gameId; });
+    if (!game) return;
+    var dims = detectDimensions(newDesc);
+    if (!dims || dims === "ambiguous") dims = game.dimensions;
+    game.description = newDesc;
+    game.dimensions = dims;
+    var words = newDesc.trim().split(/\s+/).slice(0, 5).join(" ");
+    game.title = (words.length > 40 ? words.slice(0, 40) + "…" : words) + " (" + dims + ")";
+    game.createdAt = Date.now();
+    azaFnGames = azaFnGames.filter(function (g) { return g.id !== gameId; });
+    azaFnGames.unshift(game);
+    saveAzaFnGames();
+    alert("🚀 Changes published! Your game is back at the top of the Feed.");
+    renderAzaFnFeed();
+}
+
+window.openAzaFn = openAzaFn;
+window.closeAzaFn = closeAzaFn;
+window.switchAzaFnTab = switchAzaFnTab;
+window.sendAzaFnMessage = sendAzaFnMessage;
+window.azaFnBuild = azaFnBuild;
+window.azaFnLike = azaFnLike;
+window.azaFnSave = azaFnSave;
+window.azaFnShare = azaFnShare;
+window.azaFnToggleComments = azaFnToggleComments;
+window.azaFnAddComment = azaFnAddComment;
+window.azaFnToggleEdit = azaFnToggleEdit;
+window.azaFnRepublish = azaFnRepublish;
+
+
+// --- Public Game Feed (topbar button for everyone) ---
+function openPublicFeed() {
+    document.getElementById("publicFeedOverlay").style.display = "flex";
+    renderPublicFeed();
+}
+
+function closePublicFeed() {
+    document.getElementById("publicFeedOverlay").style.display = "none";
+}
+
+function renderPublicFeed() {
+    var panel = document.getElementById("publicFeedPanel");
+    if (!panel) return;
+    loadAzaFnGames();
+
+    if (azaFnGames.length === 0) {
+        panel.innerHTML = '<div class="empty-feed">No games yet! Please come back later!</div>';
+        return;
+    }
+
+    // Reuse the same card renderer as AzaFn feed
+    // Temporarily point azafnFeedPanel logic at public panel by rendering into publicFeedPanel
+    var account = JSON.parse(localStorage.getItem("azoraAccount") || "{}");
+    var myName = account.username || "";
+    var loggedIn = localStorage.getItem("loggedIn") === "true";
+    panel.innerHTML = "";
+
+    azaFnGames.forEach(function (game) {
+        var isOwner = loggedIn && game.creator === myName;
+        var liked = loggedIn && (game.likedBy || []).indexOf(myName) !== -1;
+        var saved = loggedIn && (game.savedBy || []).indexOf(myName) !== -1;
+        var initial = (game.creator || "?")[0].toUpperCase();
+        var timeStr = new Date(game.createdAt).toLocaleString();
+        var commentsHtml = "";
+        (game.comments || []).forEach(function (c) {
+            commentsHtml += '<div class="game-comment"><strong>' + escapeHtml(c.user) + ':</strong> ' + escapeHtml(c.text) + '</div>';
+        });
+
+        var card = document.createElement("div");
+        card.className = "game-card";
+        card.innerHTML =
+            '<div class="game-card-header">' +
+                '<div class="game-card-avatar">' + initial + '</div>' +
+                '<div class="game-card-meta"><strong>' + escapeHtml(game.creator) + '</strong><span>' + timeStr + '</span></div>' +
+            '</div>' +
+            '<div class="game-card-title">' + escapeHtml(game.title) + '</div>' +
+            '<div class="game-card-dims">' + escapeHtml(game.dimensions) + '</div>' +
+            '<div class="game-card-desc">' + escapeHtml(game.description) + '</div>' +
+            '<div class="game-card-actions">' +
+                '<button class="game-action-btn' + (liked ? ' liked' : '') + '" onclick="azaFnLike(\'' + game.id + '\'); renderPublicFeed();">' +
+                    (liked ? '❤️ ' : '🤍 ') + (game.likes || 0) +
+                '</button>' +
+                '<button class="game-action-btn" onclick="azaFnToggleComments(\'' + game.id + '\')">💬 Comments (' + (game.comments || []).length + ')</button>' +
+                (loggedIn
+                    ? '<button class="game-action-btn' + (saved ? ' saved' : '') + '" onclick="azaFnSave(\'' + game.id + '\'); renderPublicFeed();">' +
+                        (saved ? '🔖 Saved' : '📑 Save') + '</button>'
+                    : '') +
+                '<button class="game-action-btn" onclick="azaFnShare(\'' + game.id + '\')">📤 Share</button>' +
+                (isOwner
+                    ? '<button class="game-action-btn" onclick="azaFnToggleEdit(\'' + game.id + '\')">✏️ Edit</button>'
+                    : '') +
+            '</div>' +
+            '<div class="game-comments" id="comments_' + game.id + '">' + commentsHtml +
+                (loggedIn
+                    ? '<div class="comment-input-row">' +
+                        '<input type="text" id="commentInput_' + game.id + '" placeholder="Write a comment...">' +
+                        '<button onclick="azaFnAddComment(\'' + game.id + '\'); renderPublicFeed();">Post</button>' +
+                      '</div>'
+                    : '<p style="color:rgba(255,255,255,0.7);font-size:13px;">Log in to comment.</p>') +
+            '</div>' +
+            (isOwner
+                ? '<div class="game-edit-area" id="edit_' + game.id + '">' +
+                    '<textarea id="editDesc_' + game.id + '">' + escapeHtml(game.description) + '</textarea>' +
+                    '<button onclick="azaFnRepublish(\'' + game.id + '\'); renderPublicFeed();" style="margin-top:8px;background:#1e60ff;color:#fff;">🚀 Publish Changes</button>' +
+                  '</div>'
+                : '');
+        panel.appendChild(card);
+    });
+}
+
+window.openPublicFeed = openPublicFeed;
+window.closePublicFeed = closePublicFeed;
+window.renderPublicFeed = renderPublicFeed;
