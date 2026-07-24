@@ -558,4 +558,7 @@ setTimeout(() => {
     if (charServiceEnabled === "true" && document.getElementById("charServiceToggle")) {
         document.getElementById("charServiceToggle").checked = true;
     }
+
+// 5. Load Theme Preference
+loadTheme();
 });
